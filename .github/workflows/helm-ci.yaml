@@ -1,0 +1,7 @@
+name: Helm CI
+
+on: [workflow_dispatch, push, pull_request]
+
+jobs:
+  helm-ci:
+    uses: Forsakringskassan/.github/.github/workflows/bundle-helm-ci.yaml@main

@@ -1,0 +1,34 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - {{- if .host }}
+      host: {{ .host | quote }}
+      {{- end }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $.Release.Name }}-{{ if eq .backend "quarkus" }}{{ (index $.Values.quarkus 0).name }}{{ else if eq .backend "apache" }}{{ (index $.Values.apache 0).name }}{{ else }}{{ .backend }}{{ end }}
+                port:
+                  number: {{ if eq .backend "quarkus" }}8080{{ else if eq .backend "apache" }}80{{ else }}8080{{ end }}
+          {{- end }}
+    {{- end }}
+{{- end }}

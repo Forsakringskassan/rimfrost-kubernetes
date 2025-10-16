@@ -1,10 +1,18 @@
 replicaCount: 1
 
 quarkus:
-  - name: quarkus
+  - name: folkbokford
     image:
-      repository: ghcr.io/forsakringskassan/template-quarkus-app
+      repository: ghcr.io/forsakringskassan/folkbokford
       tag: snapshot
+      livenessProbe:
+        httpGet:
+          path: /population_registration
+          port: 8080
+      readinessProbe:
+        httpGet:
+          path: /population_registration
+          port: 8080
 
 apache:
   - name: apache

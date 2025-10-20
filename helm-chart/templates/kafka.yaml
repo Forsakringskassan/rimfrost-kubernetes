@@ -1,11 +1,12 @@
-{{- if .Values.strimzi.enabled }}
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-kafka
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
 spec:
   kafka:
-    replicas: 1
     listeners:
       - name: plain
         port: 9092
@@ -15,11 +16,6 @@ spec:
       auto.create.topics.enable: "true"
       num.partitions: 1
       default.replication.factor: 1
-    storage: { type: ephemeral }
-  zookeeper:
-    replicas: 1
-    storage: { type: ephemeral }
   entityOperator:
     topicOperator: {}
     userOperator: {}
-{{- end }}

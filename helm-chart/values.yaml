@@ -15,21 +15,21 @@ quarkus:
           port: 8080
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "template-k8s-kafka-bootstrap:9092"
+        value: "my-kafka-kafka-bootstrap:9092"
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
       tag: snapshot
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "template-k8s-kafka-bootstrap:9092"
-  - name: vah
+        value: "my-kafka-kafka-bootstrap:9092"
+  - name: rtf
     image:
       repository: ghcr.io/forsakringskassan/template-quarkus-app
       tag: snapshot
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "template-k8s-kafka-bootstrap:9092"
+        value: "my-kafka-kafka-bootstrap:9092"
 
 apache:
   - name: apache

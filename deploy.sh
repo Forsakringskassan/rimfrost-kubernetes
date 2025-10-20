@@ -32,10 +32,8 @@ minikube start --driver=docker --cpus=2 --memory=4096
 echo "🌐 Enabling ingress addon..."
 minikube addons enable ingress
 
-echo "🔗 Building Helm dependencies..."
-if ! helm dependency build ./helm-chart; then
-  echo "❌ Failed to build Helm dependencies (check Chart.yaml and repo URLs)."
-  exit 1
+if ! helm repo list | awk 'NR>1{print $1}' | grep -qx strimzi; then
+  helm repo add strimzi https://strimzi.io/charts/
 fi
 
 # Wait for ingress controller to be ready
@@ -65,6 +63,7 @@ for i in {1..10}; do
 done
 
 
+helm dependency build ./helm-chart
 
 # Deploy the application using Helm
 echo "📦 Deploying FK application stack..."

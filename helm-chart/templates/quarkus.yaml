@@ -21,15 +21,47 @@ spec:
         app.kubernetes.io/name: template-chart
         app.kubernetes.io/instance: {{ $.Release.Name }}
         app.kubernetes.io/component: {{ .name }}
+      {{- with .podAnnotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: {{ .name }}
           image: "{{ .image.repository }}:{{ .image.tag }}"
-          imagePullPolicy: Always
+          imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ default 8080 .containerPort }}
               protocol: TCP
+          {{- if .envFrom }}
+          envFrom:
+            {{ toYaml .envFrom | indent 12 }}
+          {{- end }}
+
+          {{- if .env }}
+          env:
+          {{- range .env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+          {{- end }}
+          {{- end }}
+
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{ toYaml .livenessProbe | indent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{ toYaml .readinessProbe | indent 12 }}
+          {{- end }}
+
+          {{- /* Resources (optional per-app) */}}
+          {{- if .resources }}
+          resources:
+            {{ toYaml .resources | indent 12 }}
+          {{- end }}
+
 ---
 apiVersion: v1
 kind: Service
@@ -42,7 +74,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8080
+    - port: {{ default 8080 .servicePort }}
       targetPort: http
       protocol: TCP
       name: http

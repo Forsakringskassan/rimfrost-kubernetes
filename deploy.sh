@@ -32,6 +32,12 @@ minikube start --driver=docker --cpus=2 --memory=4096
 echo "🌐 Enabling ingress addon..."
 minikube addons enable ingress
 
+echo "🔗 Building Helm dependencies..."
+if ! helm dependency build ./helm-chart; then
+  echo "❌ Failed to build Helm dependencies (check Chart.yaml and repo URLs)."
+  exit 1
+fi
+
 # Wait for ingress controller to be ready
 echo "⏳ Waiting for ingress controller to be ready..."
 for i in {1..60}; do
@@ -57,6 +63,8 @@ for i in {1..10}; do
   echo "   Attempt $i/10: Waiting for admission webhook..."
   sleep 10
 done
+
+
 
 # Deploy the application using Helm
 echo "📦 Deploying FK application stack..."

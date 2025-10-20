@@ -25,7 +25,7 @@ quarkus:
         value: "my-kafka-kafka-bootstrap:9092"
   - name: rtf
     image:
-      repository: ghcr.io/forsakringskassan/template-quarkus-app
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-ratt-till-forsakring
       tag: snapshot
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS

@@ -16,6 +16,21 @@ quarkus:
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "template-k8s-kafka-bootstrap:9092"
+  - name: arbetsgivare
+    image:
+      repository: ghcr.io/forsakringskassan/folkbokford
+      tag: snapshot
+      livenessProbe:
+        httpGet:
+          path: /employer
+          port: 8080
+      readinessProbe:
+        httpGet:
+          path: /employer
+          port: 8080
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "template-k8s-kafka-bootstrap:9092"
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur

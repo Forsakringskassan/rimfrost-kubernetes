@@ -4,3 +4,9 @@ description: A Helm chart for FK template applications
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
+
+dependencies:
+  - name: strimzi-kafka-operator
+    version: 0.48.0
+    repository: https://strimzi.io/charts/
+    condition: strimzi.enabled

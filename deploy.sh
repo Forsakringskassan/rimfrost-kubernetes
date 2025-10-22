@@ -32,6 +32,10 @@ minikube start --driver=docker --cpus=2 --memory=4096
 echo "🌐 Enabling ingress addon..."
 minikube addons enable ingress
 
+if ! helm repo list | awk 'NR>1{print $1}' | grep -qx strimzi; then
+  helm repo add strimzi https://strimzi.io/charts/
+fi
+
 # Wait for ingress controller to be ready
 echo "⏳ Waiting for ingress controller to be ready..."
 for i in {1..60}; do
@@ -57,6 +61,9 @@ for i in {1..10}; do
   echo "   Attempt $i/10: Waiting for admission webhook..."
   sleep 10
 done
+
+
+helm dependency build ./helm-chart
 
 # Deploy the application using Helm
 echo "📦 Deploying FK application stack..."

@@ -4,7 +4,7 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: snapshot
+      tag: snapshot      
       livenessProbe:
         httpGet:
           path: /population_registration
@@ -13,6 +13,23 @@ quarkus:
         httpGet:
           path: /population_registration
           port: 8080
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "my-kafka-kafka-bootstrap:9092"
+  - name: vah
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "my-kafka-kafka-bootstrap:9092"
+  - name: rtf
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-ratt-till-forsakring
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "my-kafka-kafka-bootstrap:9092"
 
 apache:
   - name: apache
@@ -33,4 +50,7 @@ ingress:
         - path: /
           pathType: Prefix
           backend: apache
+
+strimzi:
+  enabled: true
 

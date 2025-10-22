@@ -1,17 +1,13 @@
-# Template Kubernetes
+# Rimfrost Kubernetes
 
-This is intended to be used as a template local setup.
-
-This will deploy:
-
-- [template-quarkus](https://github.com/Forsakringskassan/template-quarkus)
-- [designsystem-user-app](https://github.com/Forsakringskassan/designsystem-user-app)
-
-So that it can be accessed on localhost.
+Kubernetes deployment of Rimfrost PoC for VAH (Vård av husdjur)
 
 Start it with `./deploy.sh`.
-
 Clean it with `./cleanup.sh`.
+
+## Port forwarding
+
+Start with `./deploy.sh --pf` to trigger port forwarding to open port for accessing the VAH service
 
 ## Useful Commands
 
@@ -19,13 +15,6 @@ Check pod status:
 
 ```sh
 kubectl get pods
-```
-
-View logs:
-
-```sh
-kubectl logs -f deployment/template-k8s-quarkus
-kubectl logs -f deployment/template-k8s-apache
 ```
 
 View ingress proxy logs:
@@ -39,3 +28,8 @@ Open Kubernetes dashboard:
 ```sh
 minikube dashboard
 ```
+
+## Integration test
+
+Run `mvn verify` to trigger integration tests.
+This launches the kubernetes environment locally for testing, runs a smoke test and takes down the environment.

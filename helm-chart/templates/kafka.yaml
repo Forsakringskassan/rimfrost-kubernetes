@@ -1,21 +1,49 @@
+{{- if .Values.kafka.enabled }}
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: my-kafka
+  name: {{ .Values.kafka.name }}
   annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "10"
+    strimzi.io/kraft: "enabled"
+    strimzi.io/node-pools: "enabled"
 spec:
   kafka:
+    version: {{ .Values.kafka.version | quote }}
     listeners:
       - name: plain
         port: 9092
         type: internal
         tls: false
     config:
-      auto.create.topics.enable: "true"
-      num.partitions: 1
-      default.replication.factor: 1
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      auto.create.topics.enable: true
   entityOperator:
     topicOperator: {}
     userOperator: {}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: {{ .Values.kafka.name }}-combined
+  labels:
+    strimzi.io/cluster: {{ .Values.kafka.name }}
+spec:
+  replicas: 1
+  roles: [ controller, broker ]
+  storage:
+    type: ephemeral
+{{- if .Values.kafka.topic }}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: {{ .Values.kafka.topic }}
+  labels:
+    strimzi.io/cluster: {{ .Values.kafka.name }}
+spec:
+  partitions: 3
+  replicas: 1
+{{- end }}
+{{- end }}

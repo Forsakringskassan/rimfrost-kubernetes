@@ -60,7 +60,32 @@ spec:
               value: {{ .value | quote }}
           {{- end }}
           {{- end }}
+          {{ if eq .name "rtf"}}
+          {{- $folk := dict "port" 8080 }}
+          {{- range $i, $q := $.Values.quarkus }}
+            {{- if eq $q.name "folkbokford" }}
+              {{- $_ := set $folk "port" (default 8080 $q.servicePort) }}
+            {{- end}}
+          {{- end}}
+          env:
+          {{- if .env }}
+          {{- range .env}}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+          {{- end }}
+          {{- end }}
+            - name: FOLKBOKFORD_BASE_URL
+              value: "http://{{ $.Release.Name }}-folkbokford:{{ default 8080 $folk.port }}"
+        {{- else }}
+          {{- if .env }}
+          env:
+          {{- range .env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
 
+          {{- end }}
           {{- if .livenessProbe }}
           livenessProbe:
             {{ toYaml .livenessProbe | indent 12 }}

@@ -27,6 +27,8 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    servicePort: 8888
+
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
@@ -37,6 +39,7 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+
   - name: rtf
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-ratt-till-forsakring

@@ -32,6 +32,7 @@ minikube start --driver=docker --cpus=2 --memory=4096
 echo "🌐 Enabling ingress addon..."
 minikube addons enable ingress
 
+echo "🔄 Adding strimzi to repo list..."
 if ! helm repo list | awk 'NR>1{print $1}' | grep -qx strimzi; then
   helm repo add strimzi https://strimzi.io/charts/
 fi
@@ -62,11 +63,10 @@ for i in {1..10}; do
   sleep 10
 done
 
-
+# Deploy the application using Helm
+echo "📦 Building dependencies..."
 helm dependency build ./helm-chart
 
-# Deploy the application using Helm
-echo "📦 Deploying FK application stack..."
 if ! helm upgrade --install template-k8s ./helm-chart --wait; then
   echo "⚠️  Deployment failed, likely due to admission webhook not ready"
   echo "🔄 Retrying with webhook bypass..."

@@ -26,6 +26,20 @@ spec:
         {{ toYaml . | indent 8 }}
       {{- end }}
     spec:
+      {{- if .waitForKafka }}
+      initContainers:
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["sh","-c"]
+          args:
+            - |
+              echo "Waiting for Kafka at {{ $.Values.kafka.name }}-kafka-bootstrap:9092 ..."
+              for i in $(seq 1 180); do
+                nc -z {{ $.Values.kafka.name }}-kafka-bootstrap 9092 && echo "Kafka is up" && exit 0
+                echo "…not yet (try $i/180)"; sleep 2
+              done
+              echo "Kafka not ready in time"; exit 1
+      {{- end}}
       containers:
         - name: {{ .name }}
           image: "{{ .image.repository }}:{{ .image.tag }}"

@@ -92,3 +92,10 @@ echo "🌍 Your applications are available at:"
 echo ""
 echo "   http://$INGRESS_IP/"
 echo ""
+
+if [ "${1:-}" = "--pf" ]; then
+  echo "Port forwarding enabled — running port-forward.sh..."
+  ./port-forward.sh
+else
+  echo "Skipping port forwarding."
+fi

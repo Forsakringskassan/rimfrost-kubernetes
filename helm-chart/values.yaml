@@ -27,6 +27,24 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+  - name: arbetsgivare
+    image:
+      repository: ghcr.io/forsakringskassan/arbetsgivare
+      tag: snapshot
+      livenessProbe:
+        httpGet:
+          path: /arbetsgivare
+          port: 8080
+      readinessProbe:
+        httpGet:
+          path: /arbetsgivare
+          port: 8080
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur

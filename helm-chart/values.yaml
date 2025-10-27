@@ -12,7 +12,8 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: snapshot      
+      tag: snapshot
+      pullPolicy: Always
       livenessProbe:
         httpGet:
           path: /population_registration
@@ -31,6 +32,7 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
       tag: snapshot
+      pullPolicy: Always
       livenessProbe:
         httpGet:
           path: /arbetsgivare
@@ -49,6 +51,7 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
       tag: snapshot
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -59,6 +62,7 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-ratt-till-forsakring
       tag: snapshot
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

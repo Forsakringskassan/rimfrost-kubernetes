@@ -12,7 +12,7 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: snapshot      
+      tag: snapshot
       livenessProbe:
         httpGet:
           path: /population_registration

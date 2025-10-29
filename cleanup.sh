@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -Eeuo pipefail
 
 # Remove the Helm release
 echo "📦 Removing Helm release..."

@@ -4,7 +4,7 @@ set -e
 
 # Remove the Helm release
 echo "📦 Removing Helm release..."
-helm uninstall template-k8s || echo "Release not found, continuing..."
+helm uninstall rimfrost-k8s || echo "Release not found, continuing..."
 
 echo "removing any Chart.lock"
 rm -f helm-chart/Chart.lock

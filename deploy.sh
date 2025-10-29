@@ -67,7 +67,7 @@ done
 echo "📦 Building dependencies..."
 helm dependency build ./helm-chart
 
-if ! helm upgrade --install template-k8s ./helm-chart --wait; then
+if ! helm upgrade --install rimfrost-k8s ./helm-chart --wait; then
   echo "⚠️  Deployment failed, likely due to admission webhook not ready"
   echo "🔄 Retrying with webhook bypass..."
   
@@ -75,7 +75,7 @@ if ! helm upgrade --install template-k8s ./helm-chart --wait; then
   kubectl delete validatingwebhookconfiguration ingress-nginx-admission 2>/dev/null || true
   
   # Deploy without webhook validation
-  helm upgrade --install template-k8s ./helm-chart --wait
+  helm upgrade --install rimfrost-k8s ./helm-chart --wait
   
   echo "✅ Deployment completed (webhook validation bypassed)"
 fi

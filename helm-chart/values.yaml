@@ -45,6 +45,16 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+  - name: uppgiftslager
+    image:
+      repository: ghcr.io/forsakringskassan/operativt-uppgiftslager
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
@@ -58,6 +68,16 @@ quarkus:
   - name: rtf
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-ratt-till-forsakring
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
+  - name: rtf-manuell
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-manuell-regel-ratt-till-forsakring
       tag: snapshot
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS

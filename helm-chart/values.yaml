@@ -47,7 +47,7 @@ quarkus:
     waitForKafka: true
   - name: uppgiftslager
     image:
-      repository: ghcr.io/forsakringskassan/operativt-uppgiftslager
+      repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
       tag: snapshot
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS

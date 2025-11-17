@@ -1,6 +1,5 @@
 package fk.rimfrost;
 import static org.junit.jupiter.api.Assertions.*;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +10,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import se.fk.rimfrost.api.vardavhusdjur.jaxrsspec.controllers.generatedsource.model.VahRequest;
+import se.fk.rimfrost.api.vardavhusdjur.jaxrsspec.controllers.generatedsource.model.VahResponse;
 
 public class SmokeTestIT {
 
@@ -51,9 +52,12 @@ public class SmokeTestIT {
     @DisplayName("Smoke test för VAH flöde")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @ValueSource(strings = {"12345"})
-    void smokeTest_myEndpoint(String personnummer) throws IOException, InterruptedException {
+    void smokeTest_VahRequest(String personnummer) throws IOException, InterruptedException {
         waitForService(BASE_URL, 10, 5);
-        String jsonBody = String.format("{\"pnr\":\"%s\"}", personnummer);
+        // send VahRequest
+        var vahRequest = new VahRequest();
+        vahRequest.setPnr(personnummer);
+        String jsonBody = mapper.writeValueAsString(vahRequest);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL))
                 .header("Content-Type", "application/json")
@@ -61,15 +65,15 @@ public class SmokeTestIT {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        // verify VahResponse
         System.out.println("Response code: " + response.statusCode());
         System.out.println("Response body: " + response.body());
         assertEquals(201, response.statusCode(), "Unexpected HTTP status code");
-        JsonNode json = mapper.readTree(response.body());
-        assertTrue(json.has("id"), "Response JSON should contain 'id' field");
-        assertTrue(json.has("result"), "Response JSON should contain 'result' field");
-        assertTrue(json.has("request"), "Response JSON should contain 'request' field");
-        assertTrue(json.has("pnr"), "Response JSON should contain 'pnr' field");
-        assertTrue(json.has("response"), "Response JSON should contain 'response' field");
-        assertEquals(personnummer, json.get("pnr").asText(), "Expected status=ok in JSON response");
+        VahResponse vahResponse = mapper.readValue(response.body(), VahResponse.class);
+        assertNotNull(vahResponse.getId());
+        assertNotNull(vahResponse.getProcessId());
+        assertEquals(personnummer, vahResponse.getPnr());
+        assertNull(vahResponse.getRtfResult());
+        assertNull(vahResponse.getRtfManuellResult());
     }
 }

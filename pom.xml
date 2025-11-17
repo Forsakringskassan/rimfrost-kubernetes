@@ -36,7 +36,22 @@
             <version>2.17.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>se.fk.rimfrost.api.vardavhusdjur</groupId>
+            <artifactId>rimfrost-vard-av-husdjur-api-jaxrs-spec</artifactId>
+            <version>0.1.0</version>
+        </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>github--Forsakringskassan--repository</id>
+            <url>https://maven.pkg.github.com/Forsakringskassan/repository</url>
+        </repository>
+    </repositories>
     <build>
         <plugins>
             <plugin>

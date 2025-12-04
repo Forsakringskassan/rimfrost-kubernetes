@@ -85,6 +85,16 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+  - name: kundbehovsflode
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-kundbehovsflode
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
 
 ingress:
   enabled: true

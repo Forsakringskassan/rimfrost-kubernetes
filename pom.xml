@@ -37,9 +37,41 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>se.fk.rimfrost.api.vardavhusdjur</groupId>
-            <artifactId>rimfrost-vard-av-husdjur-api-jaxrs-spec</artifactId>
-            <version>0.1.0</version>
+            <groupId>se.fk.rimfrost</groupId>
+            <artifactId>rimfrost-service-kundbehovsflode-openapi-jaxrs-spec</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>se.fk.rimfrost</groupId>
+            <artifactId>rimfrost-service-kundbehovsflode-asyncapi</artifactId>
+            <version>0.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>se.fk.rimfrost</groupId>
+            <artifactId>rimfrost-service-oul-openapi-jaxrs-spec</artifactId>
+            <version>0.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>se.fk.rimfrost.regel.rtf.manuell</groupId>
+            <artifactId>rimfrost-regel-rtf-manuell-openapi-jaxrs-spec</artifactId>
+            <version>0.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.20.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>1.21.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>4.0.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>

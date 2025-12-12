@@ -14,14 +14,34 @@ spec:
         port: 9092
         type: internal
         tls: false
+      # External listener enabling connection outside cluster
+      # when port forwarding is enabled
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+        configuration:
+          brokers:
+            - broker: 0
+              advertisedHost: 127.0.0.1
+              advertisedPort: 9094
+
+    resources:
+      requests:
+        memory: 1Gi
+      limits:
+        memory: 1Gi
+
     config:
+      auto.create.topics.enable: true
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1
-      auto.create.topics.enable: true
+
   entityOperator:
     topicOperator: {}
     userOperator: {}
+
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
@@ -31,10 +51,18 @@ metadata:
     strimzi.io/cluster: {{ .Values.kafka.name }}
 spec:
   replicas: 1
-  roles: [ controller, broker ]
+  roles:
+    - controller
+    - broker
+
+  jvmOptions:
+    "-Xms": "512m"
+    "-Xmx": "512m"
+
   storage:
     type: ephemeral
-{{- if .Values.kafka.topic }}
+
+  {{- if .Values.kafka.topic }}
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
@@ -45,5 +73,5 @@ metadata:
 spec:
   partitions: 3
   replicas: 1
-{{- end }}
-{{- end }}
+  {{- end }}
+  {{- end }}

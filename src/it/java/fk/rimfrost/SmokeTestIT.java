@@ -257,7 +257,7 @@ public class SmokeTestIT {
 
         // tilldela uppgift
         var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
-        // assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getUppgift().getKundbehovsflodeId());
+        assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getUppgift().getKundbehovsflodeId());
         var regelTyp = uppgifterHandlaggareResponse.getUppgift().getRegeltyp();
         // hämta url för uppgift
         var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelTyp);

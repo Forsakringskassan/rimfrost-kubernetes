@@ -15,38 +15,36 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
       tag: snapshot
-      livenessProbe:
-        httpGet:
-          path: /population_registration
-          port: 8080
-      readinessProbe:
-        httpGet:
-          path: /population_registration
-          port: 8080
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
       tag: snapshot
-      livenessProbe:
-        httpGet:
-          path: /arbetsgivare
-          port: 8080
-      readinessProbe:
-        httpGet:
-          path: /arbetsgivare
-          port: 8080
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
@@ -57,6 +55,13 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
@@ -67,6 +72,13 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
@@ -77,6 +89,13 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
@@ -87,6 +106,13 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
   - name: kundbehovsflode
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-kundbehovsflode
@@ -97,6 +123,13 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
 
 ingress:
   enabled: true

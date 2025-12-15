@@ -26,7 +26,7 @@ fi
 
 # Start minikube if not running
 echo "🔧 Starting Minikube..."
-minikube start --driver=docker --cpus=4 --memory=4096
+minikube start --driver=docker --cpus=4 --memory=8192
 
 # Enable ingress addon
 echo "🌐 Enabling ingress addon..."

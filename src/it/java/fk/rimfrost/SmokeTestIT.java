@@ -271,4 +271,33 @@ public class SmokeTestIT {
         var kundbehovsflodeDone = mapper.readValue(kundbehovsflodeDoneJson, KundbehovsflodeDoneMessage.class);
         assertEquals(kundbehovsflodeResponse.getKundbehovsflode().getId().toString(), kundbehovsflodeDone.getKundbehovsflodeId());
     }
+
+    @DisplayName("Load test för VAH flöde")
+    @ParameterizedTest(name = "Load test med personnummer={0}")
+    @CsvSource({
+            "19990101-1234, VAH, 2025-12-24, 2025-12-26, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+    })
+    void loadTest(String personnummer, String formanstyp, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
+        mapper.registerModule(new JavaTimeModule());
+        var period = new Period();
+        period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+        period.setSlut(LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+        for (int i = 0; i < 100; i++) {
+            // send KundbehovRequest
+            PostKundbehovResponse kundbehovResponse =
+                    sendKundbehovRequest(personnummer, formanstyp, period);
+            // send KundbehovsflodeRequest
+            PostKundbehovsflodeResponse kundbehovsflodeResponse =
+                    sendKundbehovsflodeRequest(kundbehovResponse.getKundbehov().getId());
+            var kundbehovsflodeId = kundbehovsflodeResponse.getKundbehovsflode().getId();
+            assertEquals(kundbehovResponse.getKundbehov().getId(),
+                    kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getId());
+            assertEquals(period.getStart().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getStart().toInstant());
+            assertEquals(period.getSlut().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getSlut().toInstant());
+            assertEquals(formanstyp, kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getFormanstyp());
+
+            Thread.sleep(2);
+        }
+
+    }
 }

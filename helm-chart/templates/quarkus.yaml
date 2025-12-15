@@ -1,3 +1,4 @@
+{{- $defaultResources := .Values.quarkusDefaults.resources }}
 {{- range .Values.quarkus }}
 ---
 apiVersion: apps/v1
@@ -73,7 +74,7 @@ spec:
           {{- /* Resources (optional per-app) */}}
           {{- if .resources }}
           resources:
-{{ toYaml .resources | indent 12 }}
+{{ toYaml (default $defaultResources .resources) | indent 12 }}
           {{- end }}
 
 ---

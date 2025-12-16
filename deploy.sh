@@ -30,6 +30,7 @@ minikube start --driver=docker --cpus=4 --memory=8192
 
 # Enable ingress addon
 echo "🌐 Enabling ingress addon..."
+minikube addons disable ingress
 minikube addons enable ingress
 
 echo "🔄 Adding strimzi to repo list..."

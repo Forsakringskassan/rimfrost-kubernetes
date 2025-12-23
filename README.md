@@ -34,6 +34,17 @@ minikube dashboard
 Run `mvn verify` to trigger integration tests.
 This launches the kubernetes environment locally for testing, runs a smoke test and takes down the environment.
 
+### Remote debugging of container
+
+Exposing port 5005 of a pod makes it possible to connect the IDE with Remote JVM debugging using single-step and breakpoints.
+
+This has been done for service _rtf_manuell_ , but can be applied to any service (check settings for this pod in values.yaml and deploy.sh)
+
+#### IntellijIdea
+
+Create a new debug configuration: _Remote JVM Debug_<br>
+Select: _Attach to remote JVM_ , connect to localhost:5005
+
 ## Develop faster locally (quarkus projects)
 
 Instead of relying on pushing your changes to GitHub and waiting for a workflow to build and publish a docker image, which takes extra time and effort, you can just do it locally.

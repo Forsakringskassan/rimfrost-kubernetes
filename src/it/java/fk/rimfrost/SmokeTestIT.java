@@ -1,6 +1,7 @@
 package fk.rimfrost;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -111,6 +113,37 @@ public class SmokeTestIT {
         return records.iterator().next().value();
     }
 
+    public boolean hasKundbehovsflodeId(String json, String kundbehovsflodeId) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode root = mapper.readTree(json);
+            return kundbehovsflodeId.equals(
+                    root.path("kundbehovsflodeId").asText(null)
+            );
+        } catch (Exception e) {
+            return false; // or rethrow, depending on your use case
+        }
+    }
+
+    private String getKafkaMessage(KafkaConsumer<String, String> consumer, String kundbehovsflodeId) {
+        // How many poll attempts before giving up
+        int maxAttempts = 5;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            System.out.printf("Polling kafka topic waiting for kundbehovsflodeId: %s%n", kundbehovsflodeId);
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
+            for (ConsumerRecord<String, String> record : records) {
+                String value = record.value();
+                System.out.printf("-- Found kafka message with kundbehovsflodeId: %s%n", value);
+                if (hasKundbehovsflodeId(value, kundbehovsflodeId)) {
+                    return value;
+                }
+            }
+        }
+        // Nothing matched within the allowed attempts
+        return null;
+    }
+
+
     private static PostKundbehovResponse sendKundbehovRequest(String personnummer,
                                                               String formanstyp,
                                                               Period period) throws IOException, InterruptedException {
@@ -150,8 +183,8 @@ public class SmokeTestIT {
             postUppgifterHandlaggareResponse = mapper.readValue(response.body(), PostUppgifterHandlaggareResponse.class);
             attempt++;
             Thread.sleep(1000);
-        } while (postUppgifterHandlaggareResponse.getUppgift() == null && attempt < maxRetries);
-        if (postUppgifterHandlaggareResponse.getUppgift() == null) {
+        } while (postUppgifterHandlaggareResponse.getOperativUppgift() == null && attempt < maxRetries);
+        if (postUppgifterHandlaggareResponse.getOperativUppgift() == null) {
             throw new RuntimeException("Ingen uppgift hittades");
         }
         return postUppgifterHandlaggareResponse;
@@ -234,10 +267,9 @@ public class SmokeTestIT {
     @DisplayName("Smoke test för VAH flöde")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @CsvSource({
-            "19990101-1234, VAH, 2025-12-24, 2025-12-26, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+            "19990101-9999, VAH, 2025-12-24, 2025-12-26, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
     })
     void smokeTest_VahRequest(String personnummer, String formanstyp, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
-        // waitForService(BASE_URL, 10, 5);
         mapper.registerModule(new JavaTimeModule());
         var period = new Period();
         period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
@@ -257,8 +289,8 @@ public class SmokeTestIT {
 
         // tilldela uppgift
         var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
-        assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getUppgift().getKundbehovsflodeId());
-        var regelTyp = uppgifterHandlaggareResponse.getUppgift().getRegeltyp();
+        assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getOperativUppgift().getKundbehovsflodeId());
+        var regelTyp = uppgifterHandlaggareResponse.getOperativUppgift().getRegeltyp();
         // hämta url för uppgift
         var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelTyp);
         var ersattningId = regelGetDataResponse.getErsattning().getFirst().getErsattningId();
@@ -267,8 +299,7 @@ public class SmokeTestIT {
         var patchResult = sendRegelPatchData(String.valueOf(kundbehovsflodeId), regelTyp, Beslutsutfall.JA, ersattningId);
         assertEquals(204, patchResult);
         // assert kafka done message
-        String kundbehovsflodeDoneJson = readKafkaMessage(kundbehovsflodeDoneConsumer);
-        var kundbehovsflodeDone = mapper.readValue(kundbehovsflodeDoneJson, KundbehovsflodeDoneMessage.class);
-        assertEquals(kundbehovsflodeResponse.getKundbehovsflode().getId().toString(), kundbehovsflodeDone.getKundbehovsflodeId());
+        String kundbehovsflodeDoneJson = getKafkaMessage(kundbehovsflodeDoneConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());
+        assertNotNull(kundbehovsflodeDoneJson);
     }
 }

@@ -49,6 +49,8 @@ spec:
             - name: http
               containerPort: {{ default 8080 .containerPort }}
               protocol: TCP
+            - name: debug
+              containerPort: 5005
           {{- if .envFrom }}
           envFrom:
 {{ toYaml .envFrom | indent 12 }}

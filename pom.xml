@@ -39,7 +39,7 @@
         <dependency>
             <groupId>se.fk.rimfrost</groupId>
             <artifactId>rimfrost-service-kundbehovsflode-openapi-jaxrs-spec</artifactId>
-            <version>1.3.2</version>
+            <version>1.3.5</version>
         </dependency>
         <dependency>
             <groupId>se.fk.rimfrost</groupId>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>se.fk.rimfrost</groupId>
             <artifactId>rimfrost-service-oul-openapi-jaxrs-spec</artifactId>
-            <version>0.1.7</version>
+            <version>0.2.0</version>
         </dependency>
         <dependency>
             <groupId>se.fk.rimfrost.regel.rtf.manuell</groupId>

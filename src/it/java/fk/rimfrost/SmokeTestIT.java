@@ -25,13 +25,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.fk.rimfrost.KundbehovsflodeDoneMessage;
 import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
-import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchDataRequest;
+import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
 
 public class SmokeTestIT {
 
@@ -48,7 +45,6 @@ public class SmokeTestIT {
     private static final String KUNDBEHOV_URL = KUNDBEHOVSFLODE_BASE_URL + "/kundbehov";
     private static final String KUNDBEHOVSFLODE_URL = KUNDBEHOVSFLODE_BASE_URL + "/kundbehovsflode";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
-    private static final String REGEL_URL = RTF_MANUELL_BASE_URL + "/regel";
     private static final HttpClient client = HttpClient.newHttpClient();
     private static ObjectMapper mapper = new ObjectMapper();
     private static KafkaConsumer kundbehovsflodeDoneConsumer;
@@ -220,9 +216,9 @@ public class SmokeTestIT {
         throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");
     }
 
-    private static GetDataResponse sendRegelGetData(String kundbehovsflodeId, String regeltyp) throws IOException, InterruptedException {
+    private static GetDataResponse sendRegelGetData(String kundbehovsflodeId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(REGEL_URL + "/" + regeltyp+  "/" + kundbehovsflodeId))
+                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + kundbehovsflodeId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .GET()
@@ -232,19 +228,28 @@ public class SmokeTestIT {
 
     }
 
-    private static int sendRegelPatchData(String kundbehovsflodeId, String regeltyp, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException {
-        var patchDataRequest = new PatchDataRequest();
-        patchDataRequest.setBeslutsutfall(beslutsUtfall);
-        patchDataRequest.setSignera(true);
-        patchDataRequest.setErsattningId(ersattningId);
-        patchDataRequest.setAvslagsanledning("-");
-        String jsonBody = mapper.writeValueAsString(patchDataRequest);
+    private static int sendRegelPatchData(String kundbehovsflodeId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException {
+        var patchErsattningRequest = new PatchErsattningRequest();
+        patchErsattningRequest.setBeslutsutfall(beslutsUtfall);
+        patchErsattningRequest.setAvslagsanledning("-");
+        String jsonBody = mapper.writeValueAsString(patchErsattningRequest);
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(REGEL_URL + "/" + regeltyp+  "/" + kundbehovsflodeId))
+                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + kundbehovsflodeId + "/ersattning/" + ersattningId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return response.statusCode();
+    }
+
+       private static int sendDoneOperation(String kundbehovsflodeId, String regelUrl) throws IOException, InterruptedException {
+        var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + kundbehovsflodeId + "/done"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.statusCode();
     }
@@ -267,7 +272,7 @@ public class SmokeTestIT {
     @DisplayName("Smoke test för VAH flöde")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @CsvSource({
-            "19990101-9999, VAH, 2025-12-24, 2025-12-26, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+            "19990101-9999, VAH, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
     })
     void smokeTest_VahRequest(String personnummer, String formanstyp, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
         mapper.registerModule(new JavaTimeModule());
@@ -290,16 +295,21 @@ public class SmokeTestIT {
         // tilldela uppgift
         var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
         assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getOperativUppgift().getKundbehovsflodeId());
-        var regelTyp = uppgifterHandlaggareResponse.getOperativUppgift().getRegeltyp();
+        var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
         // hämta url för uppgift
-        var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelTyp);
+        var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelUrl);
         var ersattningId = regelGetDataResponse.getErsattning().getFirst().getErsattningId();
         assertEquals(kundbehovsflodeId, regelGetDataResponse.getKundbehovsflodeId());
         // färdigställ uppgift
-        var patchResult = sendRegelPatchData(String.valueOf(kundbehovsflodeId), regelTyp, Beslutsutfall.JA, ersattningId);
+        var patchResult = sendRegelPatchData(String.valueOf(kundbehovsflodeId), regelUrl, Beslutsutfall.JA, ersattningId);
         assertEquals(204, patchResult);
+
+       var doneOperationResult = sendDoneOperation(String.valueOf(kundbehovsflodeId), regelUrl);
+        assertEquals(204, doneOperationResult);
+
         // assert kafka done message
         String kundbehovsflodeDoneJson = getKafkaMessage(kundbehovsflodeDoneConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());
         assertNotNull(kundbehovsflodeDoneJson);
     }
+ 
 }

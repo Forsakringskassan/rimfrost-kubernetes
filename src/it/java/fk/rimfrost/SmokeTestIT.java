@@ -48,12 +48,15 @@ public class SmokeTestIT {
     private static final HttpClient client = HttpClient.newHttpClient();
     private static ObjectMapper mapper = new ObjectMapper();
     private static KafkaConsumer kundbehovsflodeDoneConsumer;
+    private static KafkaConsumer bekraftaBeslutResponseConsumer;
     private static final String kundbehovsFlodeDoneTopic = "kundbehovsflode-done";
+    private static final String beskraftaBeslutResponseTopic = "bekraftabeslut-responses";
 
     @BeforeAll
     static void setup()
     {
         kundbehovsflodeDoneConsumer = createKafkaConsumer(kundbehovsFlodeDoneTopic);
+        bekraftaBeslutResponseConsumer = createKafkaConsumer(beskraftaBeslutResponseTopic);
     }
     /**
      * Waits for the given URL to become reachable (HTTP 200).
@@ -269,7 +272,7 @@ public class SmokeTestIT {
         return mapper.readValue(response.body(), PostKundbehovsflodeResponse.class);
     }
 
-    @DisplayName("Smoke test för VAH flöde")
+    @DisplayName("Smoke test för VAH flöde med manuellt steg")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @CsvSource({
             "19990101-9999, VAH, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
@@ -306,6 +309,53 @@ public class SmokeTestIT {
 
        var doneOperationResult = sendDoneOperation(String.valueOf(kundbehovsflodeId), regelUrl);
         assertEquals(204, doneOperationResult);
+
+        // assert kafka done message
+        String kundbehovsflodeDoneJson = getKafkaMessage(kundbehovsflodeDoneConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());
+        assertNotNull(kundbehovsflodeDoneJson);
+    }
+
+    @DisplayName("Smoke test för VAH flöde med bekräfta beslut")
+    @ParameterizedTest(name = "POST med personnummer={0}")
+    @CsvSource({
+            "19990101-9999, VAH, 2025-12-24, 2025-12-24, 77739f0d-a915-42cb-ba8f-6a4170c6011f"
+    })
+    void smokeTest_VahRequest_BekraftaBeslut(String personnummer, String formanstyp, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
+        mapper.registerModule(new JavaTimeModule());
+        var period = new Period();
+        period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+        period.setSlut(LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+        // send KundbehovRequest
+        PostKundbehovResponse kundbehovResponse =
+                sendKundbehovRequest(personnummer, formanstyp, period);
+        // send KundbehovsflodeRequest
+        PostKundbehovsflodeResponse kundbehovsflodeResponse =
+                sendKundbehovsflodeRequest(kundbehovResponse.getKundbehov().getId());
+        var kundbehovsflodeId = kundbehovsflodeResponse.getKundbehovsflode().getId();
+        assertEquals(kundbehovResponse.getKundbehov().getId(),
+                kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getId());
+        assertEquals(period.getStart().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getStart().toInstant());
+        assertEquals(period.getSlut().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getSlut().toInstant());
+        assertEquals(formanstyp, kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getFormanstyp());
+
+        // tilldela uppgift
+        var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
+        assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getOperativUppgift().getKundbehovsflodeId());
+        var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
+        // hämta url för uppgift
+        var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelUrl);
+        var ersattningId = regelGetDataResponse.getErsattning().getFirst().getErsattningId();
+        assertEquals(kundbehovsflodeId, regelGetDataResponse.getKundbehovsflodeId());
+        // färdigställ uppgift
+        var patchResult = sendRegelPatchData(String.valueOf(kundbehovsflodeId), regelUrl, Beslutsutfall.NEJ, ersattningId);
+        assertEquals(204, patchResult);
+
+       var doneOperationResult = sendDoneOperation(String.valueOf(kundbehovsflodeId), regelUrl);
+        assertEquals(204, doneOperationResult);
+
+        // assert bekräfta beslut done message
+        String bekraftaBeslutResponseJson = getKafkaMessage(bekraftaBeslutResponseConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());
+        assertNotNull(bekraftaBeslutResponseJson);
 
         // assert kafka done message
         String kundbehovsflodeDoneJson = getKafkaMessage(kundbehovsflodeDoneConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());

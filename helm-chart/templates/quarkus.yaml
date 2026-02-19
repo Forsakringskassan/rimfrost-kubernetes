@@ -78,6 +78,13 @@ spec:
           resources:
 {{ toYaml (default $defaultResources .resources) | indent 12 }}
           {{- end }}
+          volumeMounts:
+            - mountPath: /data
+              name: data-volume
+      volumes:
+        - name: data-volume
+          emptyDir:
+            sizeLimit: 1Gi
 
 ---
 apiVersion: v1

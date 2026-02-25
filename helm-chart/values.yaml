@@ -23,7 +23,8 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -33,7 +34,8 @@ quarkus:
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -43,7 +45,8 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -53,7 +56,8 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -63,7 +67,8 @@ quarkus:
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -73,7 +78,8 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
       #repository: rimfrost/rimfrost-regel-rtf-manuell
       #tag: latest
       #pullPolicy: Never
@@ -88,7 +94,8 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -98,7 +105,8 @@ quarkus:
   - name: kundbehovsflode
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-kundbehovsflode
-      tag: snapshot
+      tag: latest
+      pullPolicy: Always
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

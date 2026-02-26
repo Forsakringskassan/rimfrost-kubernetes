@@ -74,9 +74,6 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
       tag: snapshot
-      #repository: rimfrost/rimfrost-regel-rtf-manuell
-      #tag: latest
-      #pullPolicy: Never
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -84,6 +81,16 @@ quarkus:
         value: "true"
       - name: JAVA_TOOL_OPTIONS
         value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    waitForKafka: true
+  - name: regel-beraknaersattning
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-beraknaersattning
+      tag: snapshot
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
     waitForKafka: true
   - name: bekraftabeslut
     image:

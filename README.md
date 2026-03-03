@@ -40,6 +40,23 @@ Exposing port 5005 of a pod makes it possible to connect the IDE with Remote JVM
 
 This has been done for service _rtf_manuell_ , but can be applied to any service (check settings for this pod in values.yaml and deploy.sh)
 
+### Connecting to kafka broker
+
+Enable minikube tunnel: </n>
+```
+minikube tunnel
+```
+
+You can now connect to the kafka bootstrap server from your local kafka tool, by configuring _Bootstrap server_ as:</n>
+```
+localhost:9094
+```
+
+Tool example: </n>
+- https://www.kafkio.com/
+
+
+
 #### IntellijIdea
 
 Create a new debug configuration: _Remote JVM Debug_<br>

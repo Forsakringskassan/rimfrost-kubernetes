@@ -2,7 +2,7 @@
 echo "Sleeping 30 sec making sure that applications are responding before forwarding"
 sleep 30
 echo "Finding service matching with '-yrkande'"
-HANDLAGGNING_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-yrkande$' | head -n 1 | tr -d '[:space:]')
+HANDLAGGNING_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-handlaggning' | head -n 1 | tr -d '[:space:]')
 echo "HANDLAGGNING_SERVICE='$HANDLAGGNING_SERVICE'"
 if [ -n "$HANDLAGGNING_SERVICE" ]; then
   echo "Starting port-forward: kubectl port-forward service/$HANDLAGGNING_SERVICE 8888:8080"

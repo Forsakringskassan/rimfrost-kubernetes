@@ -95,9 +95,9 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
-  - name: yrkande
+  - name: handlaggning
     image:
-      repository: ghcr.io/forsakringskassan/rimfrost-service-yrkande
+      repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
       tag: latest
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS

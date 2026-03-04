@@ -8,7 +8,7 @@ function create_customer_need_flow() {
     PERIOD_STOP="$3"
 
     CUSTOMER_NEED=`curl --fail -X 'POST' \
-        'http://localhost:8888/kundbehov' \
+        'http://localhost:8888/yrkande' \
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
@@ -25,7 +25,7 @@ function create_customer_need_flow() {
         return 1
     fi
 
-    CUSTOMER_NEED_ID=`echo "${CUSTOMER_NEED}" | jq -e '.kundbehov["id"]' | sed -E 's/"(.*)"/\1/'`
+    CUSTOMER_NEED_ID=`echo "${CUSTOMER_NEED}" | jq -e '.yrkande["id"]' | sed -E 's/"(.*)"/\1/'`
 
     if [ $? -ne 0 ]; then
         echo "❌ Could not extract customer need id from customer need for ssn ${SSN}"
@@ -33,11 +33,11 @@ function create_customer_need_flow() {
     fi
 
     curl --fail -X 'POST' \
-        'http://localhost:8888/kundbehovsflode' \
+        'http://localhost:8888/handlaggning' \
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
-            "kundbehovId": "'"${CUSTOMER_NEED_ID}"'"
+            "yrkandeId": "'"${CUSTOMER_NEED_ID}"'"
         }' > /dev/null 2>&1
 
     if [ $? -ne 0 ]; then

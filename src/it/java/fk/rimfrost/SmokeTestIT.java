@@ -1,6 +1,5 @@
 package fk.rimfrost;
 import static org.junit.jupiter.api.Assertions.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
-
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -33,27 +31,27 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 public class SmokeTestIT {
 
     // Base URL configurable via environment variable or system property
-    private static final String KUNDBEHOVSFLODE_BASE_URL =
-            System.getenv("KUNDBEHOVSFLODE_BASE_URL") != null ? System.getenv("KUNDBEHOVSFLODE_BASE_URL")
-                    : System.getProperty("kundbehovsflodeBaseUrl", "http://localhost:8888");
+    private static final String HANDLAGGNING_BASE_URL =
+            System.getenv("HANDLAGGNING_BASE_URL") != null ? System.getenv("HANDLAGGNING_BASE_URL")
+                    : System.getProperty("handlaggningBaseUrl", "http://localhost:8888");
     private static final String OUL_BASE_URL =
             System.getenv("OUL_BASE_URL") != null ? System.getenv("OUL_BASE_URL")
                     : System.getProperty("oulBaseUrl", "http://localhost:8889");
     private static final String RTF_MANUELL_BASE_URL =
             System.getenv("RTF_MANUELL_BASE_URL") != null ? System.getenv("RTF_MANUELL_BASE_URL")
                     : System.getProperty("regelBaseUrl", "http://localhost:8890");
-    private static final String KUNDBEHOV_URL = KUNDBEHOVSFLODE_BASE_URL + "/kundbehov";
-    private static final String KUNDBEHOVSFLODE_URL = KUNDBEHOVSFLODE_BASE_URL + "/kundbehovsflode";
+    private static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
+    private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
     private static final HttpClient client = HttpClient.newHttpClient();
     private static ObjectMapper mapper = new ObjectMapper();
-    private static KafkaConsumer kundbehovsflodeDoneConsumer;
-    private static final String kundbehovsFlodeDoneTopic = "kundbehovsflode-done";
+    private static KafkaConsumer handlaggningDoneConsumer;
+    private static final String handlaggningDoneTopic = "handlaggning-done";
 
     @BeforeAll
     static void setup()
     {
-        kundbehovsflodeDoneConsumer = createKafkaConsumer(kundbehovsFlodeDoneTopic);
+        handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
     }
     /**
      * Waits for the given URL to become reachable (HTTP 200).
@@ -109,28 +107,28 @@ public class SmokeTestIT {
         return records.iterator().next().value();
     }
 
-    public boolean hasKundbehovsflodeId(String json, String kundbehovsflodeId) {
+    public boolean hasHandlaggningId(String json, String handlaggningId) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             JsonNode root = mapper.readTree(json);
-            return kundbehovsflodeId.equals(
-                    root.path("kundbehovsflodeId").asText(null)
+            return handlaggningId.equals(
+                    root.path("handlaggningId").asText(null)
             );
         } catch (Exception e) {
             return false; // or rethrow, depending on your use case
         }
     }
 
-    private String getKafkaMessage(KafkaConsumer<String, String> consumer, String kundbehovsflodeId) {
+    private String getKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId) {
         // How many poll attempts before giving up
         int maxAttempts = 5;
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            System.out.printf("Polling kafka topic waiting for kundbehovsflodeId: %s%n", kundbehovsflodeId);
+            System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
             for (ConsumerRecord<String, String> record : records) {
                 String value = record.value();
-                System.out.printf("-- Found kafka message with kundbehovsflodeId: %s%n", value);
-                if (hasKundbehovsflodeId(value, kundbehovsflodeId)) {
+                System.out.printf("-- Found kafka message with handlaggningId: %s%n", value);
+                if (hasHandlaggningId(value, handlaggningId)) {
                     return value;
                 }
             }
@@ -140,23 +138,23 @@ public class SmokeTestIT {
     }
 
 
-    private static PostKundbehovResponse sendKundbehovRequest(String personnummer,
-                                                              String formanstyp,
-                                                              Period period) throws IOException, InterruptedException {
-        var kundbehovRequest = new PostKundbehovRequest();
+    private static PostYrkandeResponse sendYrkandeRequest(String personnummer,
+                                                          String formanstyp,
+                                                          Period period) throws IOException, InterruptedException {
+        var yrkandeRequest = new PostYrkandeRequest();
 
-        kundbehovRequest.setPersnr(personnummer);
-        kundbehovRequest.setFormanstyp(formanstyp);
-        kundbehovRequest.setPeriod(period);
-        String jsonBody = mapper.writeValueAsString(kundbehovRequest);
+        yrkandeRequest.setPersnr(personnummer);
+        yrkandeRequest.setFormanstyp(formanstyp);
+        yrkandeRequest.setPeriod(period);
+        String jsonBody = mapper.writeValueAsString(yrkandeRequest);
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(KUNDBEHOV_URL))
+                .uri(URI.create(YRKANDE_URL))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return mapper.readValue(response.body(), PostKundbehovResponse.class);
+        return mapper.readValue(response.body(), PostYrkandeResponse.class);
 
     }
 
@@ -216,9 +214,9 @@ public class SmokeTestIT {
         throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");
     }
 
-    private static GetDataResponse sendRegelGetData(String kundbehovsflodeId, String regelUrl) throws IOException, InterruptedException {
+    private static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + kundbehovsflodeId))
+                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .GET()
@@ -228,13 +226,13 @@ public class SmokeTestIT {
 
     }
 
-    private static int sendRegelPatchData(String kundbehovsflodeId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException {
+    private static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException {
         var patchErsattningRequest = new PatchErsattningRequest();
         patchErsattningRequest.setBeslutsutfall(beslutsUtfall);
         patchErsattningRequest.setAvslagsanledning("-");
         String jsonBody = mapper.writeValueAsString(patchErsattningRequest);
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + kundbehovsflodeId + "/ersattning/" + ersattningId))
+                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId + "/ersattning/" + ersattningId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(jsonBody))
@@ -243,9 +241,9 @@ public class SmokeTestIT {
         return response.statusCode();
     }
 
-       private static int sendDoneOperation(String kundbehovsflodeId, String regelUrl) throws IOException, InterruptedException {
+       private static int sendDoneOperation(String handlaggningId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + kundbehovsflodeId + "/done"))
+            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
@@ -254,19 +252,19 @@ public class SmokeTestIT {
         return response.statusCode();
     }
 
-    private static PostKundbehovsflodeResponse sendKundbehovsflodeRequest(UUID kundbehovsId) throws IOException, InterruptedException {
-        var kundbehovsflodeRequest = new PostKundbehovsflodeRequest();
-        kundbehovsflodeRequest.setKundbehovId(kundbehovsId);
-        var jsonBody = mapper.writeValueAsString(kundbehovsflodeRequest);
+    private static PostHandlaggningResponse sendHandlaggningRequest(UUID yrkandeId) throws IOException, InterruptedException {
+        var handlaggningRequest = new PostHandlaggningRequest();
+        handlaggningRequest.setYrkandeId(yrkandeId);
+        var jsonBody = mapper.writeValueAsString(handlaggningRequest);
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(KUNDBEHOVSFLODE_URL))
+                .uri(URI.create(HANDLAGGNING_URL))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response.statusCode());
-        return mapper.readValue(response.body(), PostKundbehovsflodeResponse.class);
+        return mapper.readValue(response.body(), PostHandlaggningResponse.class);
     }
 
     @DisplayName("Smoke test för VAH flöde")
@@ -279,37 +277,37 @@ public class SmokeTestIT {
         var period = new Period();
         period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
         period.setSlut(LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
-        // send KundbehovRequest
-        PostKundbehovResponse kundbehovResponse =
-                sendKundbehovRequest(personnummer, formanstyp, period);
-        // send KundbehovsflodeRequest
-        PostKundbehovsflodeResponse kundbehovsflodeResponse =
-                sendKundbehovsflodeRequest(kundbehovResponse.getKundbehov().getId());
-        var kundbehovsflodeId = kundbehovsflodeResponse.getKundbehovsflode().getId();
-        assertEquals(kundbehovResponse.getKundbehov().getId(),
-                kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getId());
-        assertEquals(period.getStart().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getStart().toInstant());
-        assertEquals(period.getSlut().toInstant(), kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getPeriod().getSlut().toInstant());
-        assertEquals(formanstyp, kundbehovsflodeResponse.getKundbehovsflode().getKundbehov().getFormanstyp());
+        // send YrkandeRequest
+        PostYrkandeResponse yrkandeResponse =
+                sendYrkandeRequest(personnummer, formanstyp, period);
+        // send HandlaggningRequest
+        PostHandlaggningResponse handlaggningResponse =
+                sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
+        var handlaggningId = handlaggningResponse.getHandlaggning().getId();
+        assertEquals(yrkandeResponse.getYrkande().getId(),
+                handlaggningResponse.getHandlaggning().getYrkande().getId());
+        assertEquals(period.getStart().toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getPeriod().getStart().toInstant());
+        assertEquals(period.getSlut().toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getPeriod().getSlut().toInstant());
+        assertEquals(formanstyp, handlaggningResponse.getHandlaggning().getYrkande().getFormanstyp());
 
         // tilldela uppgift
         var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
-        assertEquals(kundbehovsflodeId, uppgifterHandlaggareResponse.getOperativUppgift().getKundbehovsflodeId());
+        assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
         var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
         // hämta url för uppgift
-        var regelGetDataResponse = sendRegelGetData(String.valueOf(kundbehovsflodeId), regelUrl);
+        var regelGetDataResponse = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
         var ersattningId = regelGetDataResponse.getErsattning().getFirst().getErsattningId();
-        assertEquals(kundbehovsflodeId, regelGetDataResponse.getKundbehovsflodeId());
+        assertEquals(handlaggningId, regelGetDataResponse.getHandlaggningId());
         // färdigställ uppgift
-        var patchResult = sendRegelPatchData(String.valueOf(kundbehovsflodeId), regelUrl, Beslutsutfall.JA, ersattningId);
+        var patchResult = sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId);
         assertEquals(204, patchResult);
 
-       var doneOperationResult = sendDoneOperation(String.valueOf(kundbehovsflodeId), regelUrl);
+       var doneOperationResult = sendDoneOperation(String.valueOf(handlaggningId), regelUrl);
         assertEquals(204, doneOperationResult);
 
         // assert kafka done message
-        String kundbehovsflodeDoneJson = getKafkaMessage(kundbehovsflodeDoneConsumer, kundbehovsflodeResponse.getKundbehovsflode().getId().toString());
-        assertNotNull(kundbehovsflodeDoneJson);
+        String handlaggningDoneJson = getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());
+        assertNotNull(handlaggningDoneJson);
     }
  
 }

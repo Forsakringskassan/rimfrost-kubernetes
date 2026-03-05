@@ -16,7 +16,7 @@ kafka:
   enabled: true
   name: dev-kafka
   version: "3.9.1"
-  topic: kundbehovsflode-done
+  topic: handlaggning-done
 
 
 quarkus:
@@ -95,9 +95,9 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
     waitForKafka: true
-  - name: kundbehovsflode
+  - name: handlaggning
     image:
-      repository: ghcr.io/forsakringskassan/rimfrost-service-kundbehovsflode
+      repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
       tag: latest
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS

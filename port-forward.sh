@@ -1,15 +1,15 @@
 #!/bin/bash
 echo "Sleeping 30 sec making sure that applications are responding before forwarding"
 sleep 30
-echo "Finding service matching with '-kundbehovsflode'"
-KUNDBEHOVSFLODE_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-kundbehovsflode$' | head -n 1 | tr -d '[:space:]')
-echo "KUNDBEHOVSFLODE_SERVICE='$KUNDBEHOVSFLODE_SERVICE'"
-if [ -n "$KUNDBEHOVSFLODE_SERVICE" ]; then
-  echo "Starting port-forward: kubectl port-forward service/$KUNDBEHOVSFLODE_SERVICE 8888:8080"
-  nohup kubectl port-forward service/"$KUNDBEHOVSFLODE_SERVICE" 8888:8080 > portforward_kundbehovsflode.log 2>&1 &
-  echo $! > portforward_kundbehovsflode.pid
+echo "Finding service matching with '-yrkande'"
+HANDLAGGNING_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-handlaggning' | head -n 1 | tr -d '[:space:]')
+echo "HANDLAGGNING_SERVICE='$HANDLAGGNING_SERVICE'"
+if [ -n "$HANDLAGGNING_SERVICE" ]; then
+  echo "Starting port-forward: kubectl port-forward service/$HANDLAGGNING_SERVICE 8888:8080"
+  nohup kubectl port-forward service/"$HANDLAGGNING_SERVICE" 8888:8080 > portforward_yrkande.log 2>&1 &
+  echo $! > portforward_yrkande.pid
 else
-  echo "No service ending with '-kundbehovsflode' found — skipping port-forward."
+  echo "No service ending with '-yrkande' found — skipping port-forward."
 fi
 
 echo "Finding service matching with '-uppgiftslager'"

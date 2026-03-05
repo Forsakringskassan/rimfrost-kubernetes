@@ -34,6 +34,18 @@ else
   echo "No service ending with '-rtf-manuell' found — skipping port-forward."
 fi
 
+echo "Finding service matching with '-bekraftabeslut'"
+BEKRAFTABESLUT_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-bekraftabeslut' | head -n 1 | tr -d '[:space:]')
+echo "BEKRAFTABESLUT_SERVICE='$BEKRAFTABESLUT_SERVICE'"
+if [ -n "$BEKRAFTABESLUT_SERVICE" ]; then
+  echo "Starting port-forward: kubectl port-forward service/$BEKRAFTABESLUT_SERVICE 8891:8080"
+  nohup kubectl port-forward service/"$BEKRAFTABESLUT_SERVICE" 8891:8080 > portforward_bekraftabeslut.log 2>&1 &
+  echo $! > portforward_bekraftabeslut.pid
+else
+  echo "No service ending with '-bekraftabeslut' found — skipping port-forward."
+fi
+
+
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094"
 nohup kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094 >> portforward.log 2>&1 &

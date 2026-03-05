@@ -39,7 +39,11 @@ public class SmokeTestIT {
                     : System.getProperty("oulBaseUrl", "http://localhost:8889");
     private static final String RTF_MANUELL_BASE_URL =
             System.getenv("RTF_MANUELL_BASE_URL") != null ? System.getenv("RTF_MANUELL_BASE_URL")
-                    : System.getProperty("regelBaseUrl", "http://localhost:8890");
+                    : System.getProperty("regelRtfManuellBaseUrl", "http://localhost:8890");
+    private static final String BEKRAFTABESLUT_BASE_URL =
+            System.getenv("BEKRAFTABESLUT_BASE_URL") != null ? System.getenv("BEKRAFTABESLUT_BASE_URL")
+                    : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
+
     private static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
     private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
@@ -241,9 +245,9 @@ public class SmokeTestIT {
         return response.statusCode();
     }
 
-       private static int sendDoneOperation(String handlaggningId, String regelUrl) throws IOException, InterruptedException {
+       private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId + "/done"))
+            .uri(URI.create(baseUrl + regelUrl +  "/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
@@ -277,6 +281,9 @@ public class SmokeTestIT {
         var period = new Period();
         period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
         period.setSlut(LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+
+        // service-handlaggning
+
         // send YrkandeRequest
         PostYrkandeResponse yrkandeResponse =
                 sendYrkandeRequest(personnummer, formanstyp, period);
@@ -290,6 +297,8 @@ public class SmokeTestIT {
         assertEquals(period.getSlut().toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getPeriod().getSlut().toInstant());
         assertEquals(formanstyp, handlaggningResponse.getHandlaggning().getYrkande().getFormanstyp());
 
+        // rtf-manuell
+
         // tilldela uppgift
         var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
         assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
@@ -301,9 +310,21 @@ public class SmokeTestIT {
         // färdigställ uppgift
         var patchResult = sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId);
         assertEquals(204, patchResult);
-
-       var doneOperationResult = sendDoneOperation(String.valueOf(handlaggningId), regelUrl);
+        // marker uppgift som klar
+        var doneOperationResult = sendDoneOperation(RTF_MANUELL_BASE_URL, String.valueOf(handlaggningId), regelUrl);
         assertEquals(204, doneOperationResult);
+
+        // bekraftabeslut
+
+        // tilldela uppgift
+        uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
+        assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
+        regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
+        // markera uppgift som klar
+        doneOperationResult = sendDoneOperation(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl);
+        assertEquals(204, doneOperationResult);
+
+        // vah
 
         // assert kafka done message
         String handlaggningDoneJson = getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());

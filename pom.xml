@@ -39,7 +39,7 @@
         <dependency>
             <groupId>se.fk.rimfrost</groupId>
             <artifactId>rimfrost-service-handlaggning-openapi-jaxrs-spec</artifactId>
-            <version>1.3.10</version>
+            <version>1.3.14</version>
         </dependency>
         <dependency>
             <groupId>se.fk.rimfrost</groupId>

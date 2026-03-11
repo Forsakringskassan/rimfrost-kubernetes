@@ -12,13 +12,33 @@ function create_customer_need_flow() {
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
-            "persnr": "'"${SSN}"'",
-            "formanstyp": "VAH",
-            "period": {
-                "start": "'"${PERIOD_START}"'",
-                "slut": "'"${PERIOD_STOP}"'"
-            }
-        }' 2>/dev/null`
+                "person": [
+                    {
+                        "persnr": "'"${SSN}"'",
+                        "roll": "7ed1ee53-e53c-4303-b699-ab633eb1339a",
+                        "yrkande": true
+                    }
+                ],
+                "formanstyp": "VAH",
+                "period": {
+                    "start": "'"${PERIOD_START}"'",
+                    "slut": "'"${PERIOD_STOP}"'"
+                },
+                "ersattning": [
+                    {
+                        "ersattningstyp": {
+                            "id": "000697c0-b8f3-477a-a0d9-251c03c6d8f2",
+                            "namn": "Hundbidrag"
+                        },
+                        "omfattning": 100,
+                        "period": {
+                            "start": "'"${PERIOD_START}"'",
+                            "slut": "'"${PERIOD_STOP}"'"
+                        },
+                        "periodisering": "DAG"
+                    }
+                ]
+            }' 2>/dev/null`
 
     if [ $? -ne 0 ]; then
         echo "❌ Could not create customer need for ssn ${SSN}"
@@ -84,9 +104,9 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-create_customer_need_flow "19900101-9999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
-create_customer_need_flow "19850307-9999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
-create_customer_need_flow "19940712-9999" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
+create_customer_need_flow "19990101-9999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
+create_customer_need_flow "19990101-9999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
+create_customer_need_flow "19990101-9999" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
 
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}

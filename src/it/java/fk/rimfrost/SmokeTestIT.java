@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
@@ -145,11 +146,33 @@ public class SmokeTestIT {
     private static PostYrkandeResponse sendYrkandeRequest(String personnummer,
                                                           String formanstyp,
                                                           Period period) throws IOException, InterruptedException {
+        var person = new PostYrkandeRequestPersonInner();
+        person.setPersnr(personnummer);
+        person.setRoll(UUID.fromString("7ed1ee53-e53c-4303-b699-ab633eb1339a"));
+        person.setYrkande(true);
+
+        var personer = new ArrayList<PostYrkandeRequestPersonInner>();
+        personer.add(person);
+
+        var ersattningsTyp = new Ersattningstyp();
+        ersattningsTyp.setId(UUID.fromString("000697c0-b8f3-477a-a0d9-251c03c6d8f2"));
+        ersattningsTyp.namn("Hundbidrag");
+
+        var ersattning = new PostYrkandeRequestErsattningInner();
+        ersattning.setErsattningstyp(ersattningsTyp);
+        ersattning.setOmfattning(100);
+        ersattning.setPeriod(period);
+        ersattning.setPeriodisering(Periodisering.DAG);
+
+        var ersattningar = new ArrayList<PostYrkandeRequestErsattningInner>();
+        ersattningar.add(ersattning);
+
         var yrkandeRequest = new PostYrkandeRequest();
 
-        yrkandeRequest.setPersnr(personnummer);
+        yrkandeRequest.setPerson(personer);
         yrkandeRequest.setFormanstyp(formanstyp);
         yrkandeRequest.setPeriod(period);
+        yrkandeRequest.setErsattning(ersattningar);
         String jsonBody = mapper.writeValueAsString(yrkandeRequest);
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(YRKANDE_URL))

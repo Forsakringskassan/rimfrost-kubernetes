@@ -100,9 +100,9 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-create_customer_need_flow "34d50016-8888-425b-b1a6-28fc7eb7b9ca" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
-create_customer_need_flow "d5900ed2-5dbd-44f2-81e8-96dd516d1087" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
-create_customer_need_flow "25891ce6-4e29-4c00-bcb9-d282fad30e11" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
+create_customer_need_flow "00000000-0000-0000-0000-199001019999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
+create_customer_need_flow "00000000-0000-0000-0000-199901019999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
+create_customer_need_flow "00000000-0000-0000-0000-199001011234" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
 
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}

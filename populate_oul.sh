@@ -52,7 +52,6 @@ function create_customer_need_flow() {
         -H 'Content-Type: application/json' \
         -d '{
             "yrkandeId": "'"${CUSTOMER_NEED_ID}"'",
-            "processInstansId": "91386426-fbde-41d1-b14b-b2b8366246c7",
             "handlaggningspecifikationId": "287cc231-c05d-4257-8832-464423e4b1d1"
         }' > /dev/null 2>&1
 

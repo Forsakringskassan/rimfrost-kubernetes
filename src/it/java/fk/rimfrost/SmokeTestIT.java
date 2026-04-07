@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -28,6 +29,7 @@ import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
+import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
 
 public class SmokeTestIT {
 
@@ -143,36 +145,30 @@ public class SmokeTestIT {
     }
 
 
-    private static PostYrkandeResponse sendYrkandeRequest(String personnummer,
-                                                          String formanstyp,
-                                                          Period period) throws IOException, InterruptedException {
-        var person = new PostYrkandeRequestPersonInner();
-        person.setPersnr(personnummer);
-        person.setRoll(UUID.fromString("7ed1ee53-e53c-4303-b699-ab633eb1339a"));
-        person.setYrkande(true);
+    private static PostYrkandeResponse sendYrkandeRequest(UUID individId,
+                                                          UUID erbjudandeId,
+                                                          OffsetDateTime yrkandeFrom,
+                                                          OffsetDateTime yrkandeTom) throws IOException, InterruptedException {
+        var individYrkandeRoll = new IndividYrkandeRoll();
+        individYrkandeRoll.setIndividId(individId);
+        individYrkandeRoll.setYrkandeRollId(UUID.fromString("7ed1ee53-e53c-4303-b699-ab633eb1339a"));
 
-        var personer = new ArrayList<PostYrkandeRequestPersonInner>();
-        personer.add(person);
-
-        var ersattningsTyp = new Ersattningstyp();
-        ersattningsTyp.setId(UUID.fromString("000697c0-b8f3-477a-a0d9-251c03c6d8f2"));
-        ersattningsTyp.namn("Hundbidrag");
-
-        var ersattning = new PostYrkandeRequestErsattningInner();
-        ersattning.setErsattningstyp(ersattningsTyp);
-        ersattning.setOmfattning(100);
-        ersattning.setPeriod(period);
-        ersattning.setPeriodisering(Periodisering.DAG);
-
-        var ersattningar = new ArrayList<PostYrkandeRequestErsattningInner>();
-        ersattningar.add(ersattning);
+        var produceratResultat = new ProduceratResultat();
+        produceratResultat.setId(UUID.randomUUID());
+        produceratResultat.setVersion(1);
+        produceratResultat.setFrom(yrkandeFrom);
+        produceratResultat.setTom(yrkandeTom);
+        produceratResultat.setYrkandestatus(Yrkandestatus.YRKAT);
+        produceratResultat.setTyp("ERSATTNING");
+        produceratResultat.setData("{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":\"HUNDBIDRAG\",\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
 
         var yrkandeRequest = new PostYrkandeRequest();
 
-        yrkandeRequest.setPerson(personer);
-        yrkandeRequest.setFormanstyp(formanstyp);
-        yrkandeRequest.setPeriod(period);
-        yrkandeRequest.setErsattning(ersattningar);
+        yrkandeRequest.setErbjudandeId(erbjudandeId);
+        yrkandeRequest.setYrkandeFrom(yrkandeFrom);
+        yrkandeRequest.setYrkandeTom(yrkandeTom);
+        yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
+        yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
         String jsonBody = mapper.writeValueAsString(yrkandeRequest);
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(YRKANDE_URL))
@@ -253,13 +249,19 @@ public class SmokeTestIT {
 
     }
 
-    private static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException {
+    private static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException
+    {
+        var updateErsattning = new UpdateErsattning();
+        updateErsattning.setErsattningId(ersattningId);
+        updateErsattning.setBeslutsutfall(beslutsUtfall);
+        updateErsattning.setAvslagsanledning("-");
+
         var patchErsattningRequest = new PatchErsattningRequest();
-        patchErsattningRequest.setBeslutsutfall(beslutsUtfall);
-        patchErsattningRequest.setAvslagsanledning("-");
+        patchErsattningRequest.setErsattningar(List.of(updateErsattning));
+
         String jsonBody = mapper.writeValueAsString(patchErsattningRequest);
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId + "/ersattning/" + ersattningId))
+                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(jsonBody))
@@ -282,6 +284,8 @@ public class SmokeTestIT {
     private static PostHandlaggningResponse sendHandlaggningRequest(UUID yrkandeId) throws IOException, InterruptedException {
         var handlaggningRequest = new PostHandlaggningRequest();
         handlaggningRequest.setYrkandeId(yrkandeId);
+        handlaggningRequest.handlaggningspecifikationId(UUID.randomUUID());
+
         var jsonBody = mapper.writeValueAsString(handlaggningRequest);
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(HANDLAGGNING_URL))
@@ -297,28 +301,27 @@ public class SmokeTestIT {
     @DisplayName("Smoke test för VAH flöde")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @CsvSource({
-            "19990101-9999, VAH, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+            "00000000-0000-0000-0000-199001019999, 43da1371-ad39-407f-adde-c332ef7d3662, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
     })
-    void smokeTest_VahRequest(String personnummer, String formanstyp, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
+    void smokeTest_VahRequest(UUID individId, UUID erbjudandeId, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
         mapper.registerModule(new JavaTimeModule());
-        var period = new Period();
-        period.setStart(LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
-        period.setSlut(LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+        var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        var yrkandeTom = LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
 
         // service-handlaggning
 
         // send YrkandeRequest
         PostYrkandeResponse yrkandeResponse =
-                sendYrkandeRequest(personnummer, formanstyp, period);
+                sendYrkandeRequest(individId, erbjudandeId, yrkandeFrom, yrkandeTom);
         // send HandlaggningRequest
         PostHandlaggningResponse handlaggningResponse =
                 sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
         var handlaggningId = handlaggningResponse.getHandlaggning().getId();
         assertEquals(yrkandeResponse.getYrkande().getId(),
                 handlaggningResponse.getHandlaggning().getYrkande().getId());
-        assertEquals(period.getStart().toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getPeriod().getStart().toInstant());
-        assertEquals(period.getSlut().toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getPeriod().getSlut().toInstant());
-        assertEquals(formanstyp, handlaggningResponse.getHandlaggning().getYrkande().getFormanstyp());
+        assertEquals(yrkandeFrom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
+        assertEquals(yrkandeTom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
+        assertEquals(erbjudandeId, handlaggningResponse.getHandlaggning().getYrkande().getErbjudandeId());
 
         // rtf-manuell
 
@@ -328,7 +331,7 @@ public class SmokeTestIT {
         var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
         // hämta url för uppgift
         var regelGetDataResponse = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
-        var ersattningId = regelGetDataResponse.getErsattning().getFirst().getErsattningId();
+        var ersattningId = regelGetDataResponse.getErsattningar().getFirst().getErsattningId();
         assertEquals(handlaggningId, regelGetDataResponse.getHandlaggningId());
         // färdigställ uppgift
         var patchResult = sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId);

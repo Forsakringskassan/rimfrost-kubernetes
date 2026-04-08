@@ -8,6 +8,9 @@ jobs:
     name: Run Smoke Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      GITHUB_ACTOR: ${{ secrets.PACKAGES_RW_ACTOR }}
+      GITHUB_TOKEN: ${{ secrets.PACKAGES_RW_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -39,29 +42,9 @@ jobs:
         run: |
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-      # --- Start Minikube ---
-      - name: Start Minikube
-        run: |
-          minikube start --driver=docker --cpus=2 --memory=4096
-          minikube status
-
-      # --- Optional: Enable ingress addon ---
-      - name: Enable Ingress
-        run: minikube addons enable ingress
-
-      # --- Optional: Verify cluster and Helm ---
-      - name: Verify cluster and Helm
-        run: |
-          kubectl get nodes
-          helm version
-
-      # --- Deploy Rimfrost ---
-      - name: Deploy Rimfrost
-        run: ./deploy.sh minikube
-
       # --- Run integration tests ---
       - name: Run Maven verify
-        run: mvn verify
+        run: mvn -s settings.xml verify
 
       # --- Optional: Dump logs on failure ---
       - name: Dump Kubernetes logs

@@ -145,22 +145,26 @@ public class SmokeTestIT {
     }
 
 
-    private static PostYrkandeResponse sendYrkandeRequest(UUID individId,
-                                                          UUID erbjudandeId,
+    private static PostYrkandeResponse sendYrkandeRequest(String pnr,
+                                                          String erbjudandeId,
                                                           OffsetDateTime yrkandeFrom,
                                                           OffsetDateTime yrkandeTom) throws IOException, InterruptedException {
+        var idTyp = new Idtyp();
+        idTyp.setTypId("c5f2e2b4-9143-4160-8f4b-30c172f0ac05");
+        idTyp.setVarde(pnr);
+
         var individYrkandeRoll = new IndividYrkandeRoll();
-        individYrkandeRoll.setIndividId(individId);
-        individYrkandeRoll.setYrkandeRollId(UUID.fromString("7ed1ee53-e53c-4303-b699-ab633eb1339a"));
+        individYrkandeRoll.setIndivid(idTyp);
+        individYrkandeRoll.setYrkandeRollId("80f5f41f-9e55-4fc2-a076-ad5a651e0a9d");
 
         var produceratResultat = new ProduceratResultat();
         produceratResultat.setId(UUID.randomUUID());
         produceratResultat.setVersion(1);
         produceratResultat.setFrom(yrkandeFrom);
         produceratResultat.setTom(yrkandeTom);
-        produceratResultat.setYrkandestatus(Yrkandestatus.YRKAT);
+        produceratResultat.setYrkandestatus("e27da561-a8db-4513-8272-ef652b097b16");
         produceratResultat.setTyp("ERSATTNING");
-        produceratResultat.setData("{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":\"HUNDBIDRAG\",\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
+        produceratResultat.setData("{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
 
         var yrkandeRequest = new PostYrkandeRequest();
 
@@ -185,7 +189,7 @@ public class SmokeTestIT {
 
 
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(OUL_URL + "/" + handlaggareId))
+                .uri(URI.create(OUL_URL + "/116759e4-18fd-4209-849c-90abbd257d22" + "/" + handlaggareId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.noBody())
@@ -301,9 +305,9 @@ public class SmokeTestIT {
     @DisplayName("Smoke test för VAH flöde")
     @ParameterizedTest(name = "POST med personnummer={0}")
     @CsvSource({
-            "00000000-0000-0000-0000-199001019999, 43da1371-ad39-407f-adde-c332ef7d3662, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+            "19900101-9999, 7d4a6c38-348b-4f46-9278-b1bfeabc0353, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
     })
-    void smokeTest_VahRequest(UUID individId, UUID erbjudandeId, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
+    void smokeTest_VahRequest(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
         mapper.registerModule(new JavaTimeModule());
         var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
         var yrkandeTom = LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
@@ -312,7 +316,7 @@ public class SmokeTestIT {
 
         // send YrkandeRequest
         PostYrkandeResponse yrkandeResponse =
-                sendYrkandeRequest(individId, erbjudandeId, yrkandeFrom, yrkandeTom);
+                sendYrkandeRequest(individPnr, erbjudandeId, yrkandeFrom, yrkandeTom);
         // send HandlaggningRequest
         PostHandlaggningResponse handlaggningResponse =
                 sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());

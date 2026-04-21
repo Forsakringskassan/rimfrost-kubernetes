@@ -24,56 +24,26 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
       tag: 0.2.5
-    env:
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "dev-kafka-kafka-bootstrap:9092"
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
-        value: "true"
-    waitForKafka: true
+    waitForKafka: false
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
       tag: 0.2.2
-    env:
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "dev-kafka-kafka-bootstrap:9092"
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
-        value: "true"
-    waitForKafka: true
-  - name: individ
-    image:
-      repository: ghcr.io/forsakringskassan/rimfrost-service-individ
-      tag: 0.0.2
-    env:
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "dev-kafka-kafka-bootstrap:9092"
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
-        value: "true"
-    waitForKafka: true
-  - name: yrkanderoll
-    image:
-      repository: ghcr.io/forsakringskassan/rimfrost-service-yrkanderoll
-      tag: 0.0.1
-    env:
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "dev-kafka-kafka-bootstrap:9092"
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
-        value: "true"
-    waitForKafka: true
+    waitForKafka: false
   - name: erbjudande
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande
       tag: 0.0.1
-    env:
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
-        value: "dev-kafka-kafka-bootstrap:9092"
-      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
-        value: "true"
-    waitForKafka: true
+    waitForKafka: false
+  - name: referensdata
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
+      tag: 0.0.2
+    waitForKafka: false
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 0.2.4
+      tag: 0.2.6
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -83,7 +53,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 0.1.3
+      tag: 0.1.4
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -93,7 +63,7 @@ quarkus:
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
-      tag: 0.5.3
+      tag: 0.5.4
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -103,7 +73,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 0.4.4
+      tag: 0.4.6
       #repository: rimfrost/rimfrost-regel-rtf-manuell
       #tag: latest
       #pullPolicy: Never
@@ -118,7 +88,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 0.0.9
+      tag: 0.0.10
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -128,7 +98,7 @@ quarkus:
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
-      tag: 0.3.0
+      tag: 0.3.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

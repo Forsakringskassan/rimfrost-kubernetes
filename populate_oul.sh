@@ -12,13 +12,16 @@ function create_customer_need_flow() {
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
-                "erbjudandeId": "43da1371-ad39-407f-adde-c332ef7d3662",
+                "erbjudandeId": "7d4a6c38-348b-4f46-9278-b1bfeabc0353",
                 "yrkandeFrom": "'"${FROM}"'",
                 "yrkandeTom": "'"${TO}"'",
                 "individYrkandeRoller": [
                     {
-                        "individId": "'"${INDIVID_ID}"'",
-                        "yrkandeRollId": "7ed1ee53-e53c-4303-b699-ab633eb1339a"
+                        "individ": {
+                            "typId": "c5f2e2b4-9143-4160-8f4b-30c172f0ac05",
+                            "varde": "'"${INDIVID_ID}"'"
+                        },
+                        "yrkandeRollId": "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d"
                     }
                 ],
                 "produceradeResultat": [
@@ -27,7 +30,7 @@ function create_customer_need_flow() {
                         "version": 1,
                         "from": "'"${FROM}"'",
                         "tom": "'"${TO}"'",
-                        "yrkandestatus": "YRKAT",
+                        "yrkandestatus": "e27da561-a8db-4513-8272-ef652b097b16",
                         "typ": "ERSATTNING",
                         "data": "{}"
                     }
@@ -68,7 +71,7 @@ function assign_case_worker() {
     CASE_WORKER_ID="${1}"
 
     RESPONSE=`curl --fail -X 'POST' \
-        "http://localhost:8889/uppgifter/handlaggare/${CASE_WORKER_ID}" \
+        "http://localhost:8889/uppgifter/handlaggare/116759e4-18fd-4209-849c-90abbd257d22/${CASE_WORKER_ID}" \
         -H 'accept: application/json' 2>/dev/null`
 
     if [ $? -ne 0 ]; then
@@ -99,9 +102,9 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-create_customer_need_flow "00000000-0000-0000-0000-199001019999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
-create_customer_need_flow "00000000-0000-0000-0000-199901019999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
-create_customer_need_flow "00000000-0000-0000-0000-199001011234" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
+create_customer_need_flow "19900101-9999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
+create_customer_need_flow "19990101-9999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
+create_customer_need_flow "19900101-1234" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
 
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}

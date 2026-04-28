@@ -52,7 +52,7 @@ public class SmokeTestIT {
     private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
     private static KafkaConsumer<String, String> handlaggningDoneConsumer;
     private static final String handlaggningDoneTopic = "handlaggning-done";
 

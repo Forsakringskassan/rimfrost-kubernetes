@@ -52,7 +52,7 @@ public class SmokeTestIT {
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
     private static final HttpClient client = HttpClient.newHttpClient();
     private static ObjectMapper mapper = new ObjectMapper();
-    private static KafkaConsumer handlaggningDoneConsumer;
+    private static KafkaConsumer<String, String> handlaggningDoneConsumer;
     private static final String handlaggningDoneTopic = "handlaggning-done";
 
     @BeforeAll
@@ -115,7 +115,6 @@ public class SmokeTestIT {
     }
 
     public boolean hasHandlaggningId(String json, String handlaggningId) {
-        ObjectMapper mapper = new ObjectMapper();
         try {
             JsonNode root = mapper.readTree(json);
             return handlaggningId.equals(

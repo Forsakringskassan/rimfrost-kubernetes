@@ -114,17 +114,6 @@ public class SmokeTestIT {
         return consumer;
     }
 
-    private String readKafkaMessage(KafkaConsumer<String, String> consumer)
-    {
-        ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(120));
-        if (records.isEmpty())
-        {
-            throw new IllegalStateException("No Kafka message received on topic ");
-        }
-        // return the first new record
-        return records.iterator().next().value();
-    }
-
     public boolean hasHandlaggningId(String json, String handlaggningId) {
         try {
             JsonNode root = mapper.readTree(json);

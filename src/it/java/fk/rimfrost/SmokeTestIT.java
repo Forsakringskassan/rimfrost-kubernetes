@@ -31,6 +31,19 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
 
+/**
+ * Integration smoke test for the VAH (Vård av husdjur) flow.
+ * <p>
+ * Tests the complete flow from yrkande through handläggning, rtf-manuell,
+ * bekräfta beslut, and verifies the final Kafka message.
+ * <p>
+ * Prerequisites:
+ * <ul>
+ *     <li>Minikube cluster running with all rimfrost services deployed</li>
+ *     <li>Port forwards active to localhost (8888, 8889, 8890, 8891)</li>
+ *     <li>Kafka accessible on localhost:9094</li>
+ * </ul>
+ */
 public class SmokeTestIT {
 
     // Base URL configurable via environment variable or system property

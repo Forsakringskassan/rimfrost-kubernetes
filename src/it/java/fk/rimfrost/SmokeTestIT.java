@@ -88,8 +88,8 @@ public class SmokeTestIT {
                     System.out.println("Service is up at " + url);
                     return;
                 }
-            } catch (Exception ignored) {
-                System.out.println("Waiting for service at " + url + "...");
+            } catch (Exception e) {
+                System.out.println("Waiting for service at " + url + "... (" + e.getMessage() + ")");
             }
             Thread.sleep(sleepSeconds * 1000L);
         }
@@ -120,7 +120,8 @@ public class SmokeTestIT {
                     root.path("handlaggningId").asText(null)
             );
         } catch (Exception e) {
-            return false; // or rethrow, depending on your use case
+            System.out.println("Failed to parse JSON: " + e.getMessage());
+            return false;
         }
     }
 
@@ -233,7 +234,9 @@ public class SmokeTestIT {
             }
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");

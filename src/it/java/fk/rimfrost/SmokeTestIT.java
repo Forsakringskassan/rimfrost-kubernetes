@@ -10,7 +10,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -273,13 +272,13 @@ public class SmokeTestIT {
         return response.statusCode();
     }
 
-       private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
+    private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
-            .uri(URI.create(baseUrl + regelUrl +  "/" + handlaggningId + "/done"))
-            .header("Content-Type", "application/json")
-            .timeout(Duration.ofSeconds(10))
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
+                .uri(URI.create(baseUrl + regelUrl + "/" + handlaggningId + "/done"))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(10))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.statusCode();
     }

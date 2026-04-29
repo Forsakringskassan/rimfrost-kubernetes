@@ -32,7 +32,7 @@ function create_customer_need_flow() {
                         "tom": "'"${TO}"'",
                         "yrkandestatus": "e27da561-a8db-4513-8272-ef652b097b16",
                         "typ": "ERSATTNING",
-                        "data": "{}"
+                        "data": "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}"
                     }
                 ]
             }' 2>/dev/null`
@@ -68,10 +68,11 @@ function create_customer_need_flow() {
 }
 
 function assign_case_worker() {
-    CASE_WORKER_ID="${1}"
+    ID_TYPE="${1}"
+    CASE_WORKER_ID="${2}"
 
     RESPONSE=`curl --fail -X 'POST' \
-        "http://localhost:8889/uppgifter/handlaggare/116759e4-18fd-4209-849c-90abbd257d22/${CASE_WORKER_ID}" \
+        "http://localhost:8889/uppgifter/handlaggare/${ID_TYPE}/${CASE_WORKER_ID}" \
         -H 'accept: application/json' 2>/dev/null`
 
     if [ $? -ne 0 ]; then
@@ -109,4 +110,4 @@ create_customer_need_flow "19900101-1234" "2025-08-01T08:00:00+01:00" "2025-09-0
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}
 
-assign_case_worker "469ddd20-6796-4e05-9e18-6a95953f6cb3"
+assign_case_worker "116759e4-18fd-4209-849c-90abbd257d22" "469ddd20-6796-4e05-9e18-6a95953f6cb3"

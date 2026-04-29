@@ -23,27 +23,22 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: 0.2.5
+      tag: 1.0.0
     waitForKafka: false
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
-      tag: 0.2.2
-    waitForKafka: false
-  - name: erbjudande
-    image:
-      repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande
-      tag: 0.0.1
+      tag: 1.0.0
     waitForKafka: false
   - name: referensdata
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
-      tag: 0.0.2
+      tag: 1.0.0
     waitForKafka: false
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 0.2.6
+      tag: 1.0.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -53,7 +48,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 0.1.4
+      tag: 1.0.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -63,7 +58,7 @@ quarkus:
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
-      tag: 0.5.4
+      tag: 1.0.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -73,7 +68,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 0.4.6
+      tag: 1.0.0
       #repository: rimfrost/rimfrost-regel-rtf-manuell
       #tag: latest
       #pullPolicy: Never
@@ -88,7 +83,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 0.0.10
+      tag: 1.0.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -98,7 +93,7 @@ quarkus:
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
-      tag: 0.3.1
+      tag: 1.0.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

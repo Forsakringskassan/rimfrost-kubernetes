@@ -102,8 +102,7 @@ public class SmokeTestIT {
                 }
             }
         }
-        // Nothing matched within the allowed attempts
-        return null;
+        return fail("No Kafka message with handlaggningId " + handlaggningId + " received after " + maxAttempts + " attempts");
     }
 
 
@@ -318,8 +317,7 @@ public class SmokeTestIT {
         // vah
 
         // assert kafka done message
-        String handlaggningDoneJson = getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());
-        assertNotNull(handlaggningDoneJson);
+        getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());
     }
  
 }

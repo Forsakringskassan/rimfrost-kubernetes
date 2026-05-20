@@ -173,7 +173,7 @@ public class SmokeTestIT {
         int attempt = 0;
         do {
             System.out.printf("sendUppgifterHandlaggare attempt: %s waiting for task to be assigned%n", attempt);
-            response = httpSendRetries(client, request,  HttpResponse.BodyHandlers.ofString(), 200, 180);
+            response = httpSendRetries(client, request,  HttpResponse.BodyHandlers.ofString(), 200, 5);
             postUppgifterHandlaggareResponse = mapper.readValue(response.body(), PostUppgifterHandlaggareResponse.class);
             attempt++;
             Thread.sleep(1000);

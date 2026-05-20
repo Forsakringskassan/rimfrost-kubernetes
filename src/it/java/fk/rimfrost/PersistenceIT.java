@@ -104,8 +104,7 @@ public class PersistenceIT
       var handlaggningId = handlaggningResponse.getHandlaggning().getId();
 
       // Assign task and patch beslutsutfall to JA
-      var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID);
-      assertEquals(handlaggningId, uppgifterResponse.getOperativUppgift().getHandlaggningId());
+      var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
       var regelUrl = uppgifterResponse.getOperativUppgift().getUrl();
 
       var getData = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
@@ -213,7 +212,7 @@ public class PersistenceIT
       return mapper.readValue(response.body(), PostHandlaggningResponse.class);
    }
 
-   private static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId)
+   private static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId, UUID expectedHandlaggningId)
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
@@ -226,16 +225,19 @@ public class PersistenceIT
       int attempt = 0;
       do
       {
-         System.out.printf("sendUppgifterHandlaggare attempt %d waiting for task%n", attempt);
+         System.out.printf("sendUppgifterHandlaggare attempt %d waiting for task with handlaggningId %s%n", attempt, expectedHandlaggningId);
          var httpResponse = SmokeTestIT.httpSendRetries(client, request, HttpResponse.BodyHandlers.ofString(), 200, 5);
          response = mapper.readValue(httpResponse.body(), PostUppgifterHandlaggareResponse.class);
          attempt++;
          Thread.sleep(1000);
       }
-      while (response.getOperativUppgift() == null && attempt < 120);
-      if (response.getOperativUppgift() == null)
+      while ((response.getOperativUppgift() == null
+            || !expectedHandlaggningId.equals(response.getOperativUppgift().getHandlaggningId()))
+            && attempt < 120);
+      if (response.getOperativUppgift() == null
+            || !expectedHandlaggningId.equals(response.getOperativUppgift().getHandlaggningId()))
       {
-         fail("Ingen uppgift hittades efter " + attempt + " försök");
+         fail("Ingen uppgift med handlaggningId " + expectedHandlaggningId + " hittades efter " + attempt + " försök");
       }
       return response;
    }

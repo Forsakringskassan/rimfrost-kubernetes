@@ -89,11 +89,9 @@ public class SmokeTestIT
                   System.out.println("Service ready: " + healthUrl);
                   break;
                }
-               System.out.printf("Service not ready (%d): %s%n", status, healthUrl);
             }
-            catch (Exception e)
+            catch (Exception ignored)
             {
-               System.out.printf("Service not reachable: %s (%s)%n", healthUrl, e.getMessage());
             }
             if (java.time.Instant.now().isAfter(deadline))
             {

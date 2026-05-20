@@ -47,6 +47,11 @@ public class SmokeTestIT {
             System.getenv("BEKRAFTABESLUT_BASE_URL") != null ? System.getenv("BEKRAFTABESLUT_BASE_URL")
                     : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
 
+    private static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
+    private static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
+    private static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
+    private static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
+
     private static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
     private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
@@ -118,19 +123,19 @@ public class SmokeTestIT {
                                                           OffsetDateTime yrkandeFrom,
                                                           OffsetDateTime yrkandeTom) throws IOException, InterruptedException {
         var idTyp = new Idtyp();
-        idTyp.setTypId("c5f2e2b4-9143-4160-8f4b-30c172f0ac05");
+        idTyp.setTypId(IDTYP_TYP_ID);
         idTyp.setVarde(pnr);
 
         var individYrkandeRoll = new IndividYrkandeRoll();
         individYrkandeRoll.setIndivid(idTyp);
-        individYrkandeRoll.setYrkandeRollId("80f5f41f-9e55-4fc2-a076-ad5a651e0a9d");
+        individYrkandeRoll.setYrkandeRollId(YRKANDE_ROLL_ID);
 
         var produceratResultat = new ProduceratResultat();
         produceratResultat.setId(UUID.randomUUID());
         produceratResultat.setVersion(1);
         produceratResultat.setFrom(yrkandeFrom);
         produceratResultat.setTom(yrkandeTom);
-        produceratResultat.setYrkandestatus("e27da561-a8db-4513-8272-ef652b097b16");
+        produceratResultat.setYrkandestatus(YRKANDESTATUS_ID);
         produceratResultat.setTyp("ERSATTNING");
         produceratResultat.setData("{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
 
@@ -157,7 +162,7 @@ public class SmokeTestIT {
 
 
         var request = HttpRequest.newBuilder()
-                .uri(URI.create(OUL_URL + "/116759e4-18fd-4209-849c-90abbd257d22" + "/" + handlaggareId))
+                .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.noBody())

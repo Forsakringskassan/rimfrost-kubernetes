@@ -20,6 +20,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,6 +60,12 @@ public class SmokeTestIT {
     {
         mapper.registerModule(new JavaTimeModule());
         handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
+    }
+
+    @AfterAll
+    static void teardown()
+    {
+        handlaggningDoneConsumer.close();
     }
     static KafkaConsumer<String, String> createKafkaConsumer(String topic)
     {

@@ -1,4 +1,5 @@
 package fk.rimfrost;
+
 import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,332 +32,370 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
 
-public class SmokeTestIT {
+public class SmokeTestIT
+{
 
-    // Base URL configurable via environment variable or system property
-    private static final String HANDLAGGNING_BASE_URL =
-            System.getenv("HANDLAGGNING_BASE_URL") != null ? System.getenv("HANDLAGGNING_BASE_URL")
-                    : System.getProperty("handlaggningBaseUrl", "http://localhost:8888");
-    private static final String OUL_BASE_URL =
-            System.getenv("OUL_BASE_URL") != null ? System.getenv("OUL_BASE_URL")
-                    : System.getProperty("oulBaseUrl", "http://localhost:8889");
-    private static final String RTF_MANUELL_BASE_URL =
-            System.getenv("RTF_MANUELL_BASE_URL") != null ? System.getenv("RTF_MANUELL_BASE_URL")
-                    : System.getProperty("regelRtfManuellBaseUrl", "http://localhost:8890");
-    private static final String BEKRAFTABESLUT_BASE_URL =
-            System.getenv("BEKRAFTABESLUT_BASE_URL") != null ? System.getenv("BEKRAFTABESLUT_BASE_URL")
-                    : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
+   // Base URL configurable via environment variable or system property
+   private static final String HANDLAGGNING_BASE_URL = System.getenv("HANDLAGGNING_BASE_URL") != null
+         ? System.getenv("HANDLAGGNING_BASE_URL")
+         : System.getProperty("handlaggningBaseUrl", "http://localhost:8888");
+   private static final String OUL_BASE_URL = System.getenv("OUL_BASE_URL") != null ? System.getenv("OUL_BASE_URL")
+         : System.getProperty("oulBaseUrl", "http://localhost:8889");
+   private static final String RTF_MANUELL_BASE_URL = System.getenv("RTF_MANUELL_BASE_URL") != null
+         ? System.getenv("RTF_MANUELL_BASE_URL")
+         : System.getProperty("regelRtfManuellBaseUrl", "http://localhost:8890");
+   private static final String BEKRAFTABESLUT_BASE_URL = System.getenv("BEKRAFTABESLUT_BASE_URL") != null
+         ? System.getenv("BEKRAFTABESLUT_BASE_URL")
+         : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
 
-    private static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
-    private static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
-    private static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
-    private static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
+   private static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
+   private static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
+   private static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
+   private static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
 
-    private static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
-    private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
-    private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
-    private static final HttpClient client = HttpClient.newHttpClient();
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static KafkaConsumer<String, String> handlaggningDoneConsumer;
-    private static final String handlaggningDoneTopic = "handlaggning-done";
+   private static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
+   private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
+   private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
+   private static final HttpClient client = HttpClient.newHttpClient();
+   private static final ObjectMapper mapper = new ObjectMapper();
+   private static KafkaConsumer<String, String> handlaggningDoneConsumer;
+   private static final String handlaggningDoneTopic = "handlaggning-done";
 
-    private static final List<String> SERVICE_BASE_URLS = List.of(
-            HANDLAGGNING_BASE_URL, OUL_BASE_URL, RTF_MANUELL_BASE_URL, BEKRAFTABESLUT_BASE_URL);
+   private static final List<String> SERVICE_BASE_URLS = List.of(
+         HANDLAGGNING_BASE_URL, OUL_BASE_URL, RTF_MANUELL_BASE_URL, BEKRAFTABESLUT_BASE_URL);
 
-    @BeforeAll
-    static void setup() throws Exception {
-        mapper.registerModule(new JavaTimeModule());
-        waitForServices();
-        handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
-    }
+   @BeforeAll
+   static void setup() throws Exception
+   {
+      mapper.registerModule(new JavaTimeModule());
+      waitForServices();
+      handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
+   }
 
-    static void waitForServices() throws InterruptedException {
-        var deadline = java.time.Instant.now().plusSeconds(60);
-        for (String baseUrl : SERVICE_BASE_URLS) {
-            String healthUrl = baseUrl + "/q/health";
-            while (true) {
-                try {
-                    var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().build();
-                    int status = client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
-                    if (status == 200) {
-                        System.out.println("Service ready: " + healthUrl);
-                        break;
-                    }
-                    System.out.printf("Service not ready (%d): %s%n", status, healthUrl);
-                } catch (Exception e) {
-                    System.out.printf("Service not reachable: %s (%s)%n", healthUrl, e.getMessage());
-                }
-                if (java.time.Instant.now().isAfter(deadline)) {
-                    fail("Service not ready after 60s: " + healthUrl);
-                }
-                Thread.sleep(2000);
+   static void waitForServices() throws InterruptedException
+   {
+      var deadline = java.time.Instant.now().plusSeconds(60);
+      for (String baseUrl : SERVICE_BASE_URLS)
+      {
+         String healthUrl = baseUrl + "/q/health";
+         while (true)
+         {
+            try
+            {
+               var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().build();
+               int status = client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+               if (status == 200)
+               {
+                  System.out.println("Service ready: " + healthUrl);
+                  break;
+               }
+               System.out.printf("Service not ready (%d): %s%n", status, healthUrl);
             }
-        }
-    }
-
-    @AfterAll
-    static void teardown()
-    {
-        handlaggningDoneConsumer.close();
-    }
-    static KafkaConsumer<String, String> createKafkaConsumer(String topic)
-    {
-        String bootstrap = System.getenv().getOrDefault(
-                "KAFKA_BOOTSTRAP_SERVERS",
-                "localhost:9094"
-        );
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer-" + System.currentTimeMillis());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList(topic));
-        return consumer;
-    }
-
-    private static boolean hasHandlaggningId(String json, String handlaggningId) {
-        try {
-            JsonNode root = mapper.readTree(json);
-            return handlaggningId.equals(
-                    root.path("handlaggningId").asText(null)
-            );
-        } catch (Exception e) {
-            return false; // or rethrow, depending on your use case
-        }
-    }
-
-    private String getKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId) {
-        // How many poll attempts before giving up
-        int maxAttempts = 15;
-        for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
-            for (ConsumerRecord<String, String> record : records) {
-                String value = record.value();
-                System.out.printf("-- Found kafka message with handlaggningId: %s%n", value);
-                if (hasHandlaggningId(value, handlaggningId)) {
-                    return value;
-                }
+            catch (Exception e)
+            {
+               System.out.printf("Service not reachable: %s (%s)%n", healthUrl, e.getMessage());
             }
-        }
-        return fail("No Kafka message with handlaggningId " + handlaggningId + " received after " + maxAttempts + " attempts");
-    }
-
-
-    private static PostYrkandeResponse sendYrkandeRequest(String pnr,
-                                                          String erbjudandeId,
-                                                          OffsetDateTime yrkandeFrom,
-                                                          OffsetDateTime yrkandeTom) throws IOException, InterruptedException {
-        var idTyp = new Idtyp();
-        idTyp.setTypId(IDTYP_TYP_ID);
-        idTyp.setVarde(pnr);
-
-        var individYrkandeRoll = new IndividYrkandeRoll();
-        individYrkandeRoll.setIndivid(idTyp);
-        individYrkandeRoll.setYrkandeRollId(YRKANDE_ROLL_ID);
-
-        var produceratResultat = new ProduceratResultat();
-        produceratResultat.setId(UUID.randomUUID());
-        produceratResultat.setVersion(1);
-        produceratResultat.setFrom(yrkandeFrom);
-        produceratResultat.setTom(yrkandeTom);
-        produceratResultat.setYrkandestatus(YRKANDESTATUS_ID);
-        produceratResultat.setTyp("ERSATTNING");
-        produceratResultat.setData("{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
-
-        var yrkandeRequest = new PostYrkandeRequest();
-
-        yrkandeRequest.setErbjudandeId(erbjudandeId);
-        yrkandeRequest.setYrkandeFrom(yrkandeFrom);
-        yrkandeRequest.setYrkandeTom(yrkandeTom);
-        yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
-        yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
-        String jsonBody = mapper.writeValueAsString(yrkandeRequest);
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(YRKANDE_URL))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return mapper.readValue(response.body(), PostYrkandeResponse.class);
-
-    }
-
-    private static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId) throws IOException, InterruptedException {
-
-
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        HttpResponse<String> response;
-        PostUppgifterHandlaggareResponse postUppgifterHandlaggareResponse;
-        int maxRetries = 120;
-        int attempt = 0;
-        do {
-            System.out.printf("sendUppgifterHandlaggare attempt: %s waiting for task to be assigned%n", attempt);
-            response = httpSendRetries(client, request,  HttpResponse.BodyHandlers.ofString(), 200, 5);
-            postUppgifterHandlaggareResponse = mapper.readValue(response.body(), PostUppgifterHandlaggareResponse.class);
-            attempt++;
-            Thread.sleep(1000);
-        } while (postUppgifterHandlaggareResponse.getOperativUppgift() == null && attempt < maxRetries);
-        if (postUppgifterHandlaggareResponse.getOperativUppgift() == null) {
-            throw new RuntimeException("Ingen uppgift hittades");
-        }
-        return postUppgifterHandlaggareResponse;
-    }
-
-    public static <T> HttpResponse<T> httpSendRetries(
-            HttpClient client,
-            HttpRequest request,
-            HttpResponse.BodyHandler<T> bodyHandler,
-            int expectedStatus,
-            int numberOfRetries) {
-
-        int attempt = 0;
-        HttpResponse<T> response = null;
-
-        while (attempt < numberOfRetries) {
-            attempt++;
-            try {
-                response = client.send(request, bodyHandler);
-                if (response.statusCode() == expectedStatus) {
-                    System.out.printf("httpSendRetries Attempt %s successful waiting for status %s%n", attempt, expectedStatus);
-                    return response; // success
-                }
-                System.out.printf("httpSendRetries Attempt %s failed with status code %s%n", attempt, response.statusCode());
-            } catch (IOException | InterruptedException e) {
-                System.out.printf("httpSendRetries Attempt %s failed with exception %s%n", attempt, e.getMessage());
+            if (java.time.Instant.now().isAfter(deadline))
+            {
+               fail("Service not ready after 60s: " + healthUrl);
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ignored) {}
-        }
+            Thread.sleep(2000);
+         }
+      }
+   }
 
-        throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");
-    }
+   @AfterAll
+   static void teardown()
+   {
+      handlaggningDoneConsumer.close();
+   }
 
-    private static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl) throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .GET()
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return mapper.readValue(response.body(), GetDataResponse.class);
+   static KafkaConsumer<String, String> createKafkaConsumer(String topic)
+   {
+      String bootstrap = System.getenv().getOrDefault(
+            "KAFKA_BOOTSTRAP_SERVERS",
+            "localhost:9094");
+      Properties props = new Properties();
+      props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+      props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer-" + System.currentTimeMillis());
+      props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+      props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+      props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+      KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+      consumer.subscribe(Collections.singletonList(topic));
+      return consumer;
+   }
 
-    }
+   private static boolean hasHandlaggningId(String json, String handlaggningId)
+   {
+      try
+      {
+         JsonNode root = mapper.readTree(json);
+         return handlaggningId.equals(
+               root.path("handlaggningId").asText(null));
+      }
+      catch (Exception e)
+      {
+         return false; // or rethrow, depending on your use case
+      }
+   }
 
-    private static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId) throws IOException, InterruptedException
-    {
-        var updateErsattning = new UpdateErsattning();
-        updateErsattning.setErsattningId(ersattningId);
-        updateErsattning.setBeslutsutfall(beslutsUtfall);
-        updateErsattning.setAvslagsanledning("-");
+   private String getKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId)
+   {
+      // How many poll attempts before giving up
+      int maxAttempts = 15;
+      for (int attempt = 0; attempt < maxAttempts; attempt++)
+      {
+         System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
+         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
+         for (ConsumerRecord<String, String> record : records)
+         {
+            String value = record.value();
+            System.out.printf("-- Found kafka message with handlaggningId: %s%n", value);
+            if (hasHandlaggningId(value, handlaggningId))
+            {
+               return value;
+            }
+         }
+      }
+      return fail("No Kafka message with handlaggningId " + handlaggningId + " received after " + maxAttempts + " attempts");
+   }
 
-        var patchErsattningRequest = new PatchErsattningRequest();
-        patchErsattningRequest.setErsattningar(List.of(updateErsattning));
+   private static PostYrkandeResponse sendYrkandeRequest(String pnr,
+         String erbjudandeId,
+         OffsetDateTime yrkandeFrom,
+         OffsetDateTime yrkandeTom) throws IOException, InterruptedException
+   {
+      var idTyp = new Idtyp();
+      idTyp.setTypId(IDTYP_TYP_ID);
+      idTyp.setVarde(pnr);
 
-        String jsonBody = mapper.writeValueAsString(patchErsattningRequest);
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl +  "/" + handlaggningId))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.statusCode();
-    }
+      var individYrkandeRoll = new IndividYrkandeRoll();
+      individYrkandeRoll.setIndivid(idTyp);
+      individYrkandeRoll.setYrkandeRollId(YRKANDE_ROLL_ID);
 
-    private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder()
-            .uri(URI.create(baseUrl + regelUrl +  "/" + handlaggningId + "/done"))
+      var produceratResultat = new ProduceratResultat();
+      produceratResultat.setId(UUID.randomUUID());
+      produceratResultat.setVersion(1);
+      produceratResultat.setFrom(yrkandeFrom);
+      produceratResultat.setTom(yrkandeTom);
+      produceratResultat.setYrkandestatus(YRKANDESTATUS_ID);
+      produceratResultat.setTyp("ERSATTNING");
+      produceratResultat.setData(
+            "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
+
+      var yrkandeRequest = new PostYrkandeRequest();
+
+      yrkandeRequest.setErbjudandeId(erbjudandeId);
+      yrkandeRequest.setYrkandeFrom(yrkandeFrom);
+      yrkandeRequest.setYrkandeTom(yrkandeTom);
+      yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
+      yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
+      String jsonBody = mapper.writeValueAsString(yrkandeRequest);
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(YRKANDE_URL))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return mapper.readValue(response.body(), PostYrkandeResponse.class);
+
+   }
+
+   private static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId)
+         throws IOException, InterruptedException
+   {
+
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
             .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.statusCode();
-    }
+      HttpResponse<String> response;
+      PostUppgifterHandlaggareResponse postUppgifterHandlaggareResponse;
+      int maxRetries = 120;
+      int attempt = 0;
+      do
+      {
+         System.out.printf("sendUppgifterHandlaggare attempt: %s waiting for task to be assigned%n", attempt);
+         response = httpSendRetries(client, request, HttpResponse.BodyHandlers.ofString(), 200, 5);
+         postUppgifterHandlaggareResponse = mapper.readValue(response.body(), PostUppgifterHandlaggareResponse.class);
+         attempt++;
+         Thread.sleep(1000);
+      }
+      while (postUppgifterHandlaggareResponse.getOperativUppgift() == null && attempt < maxRetries);
+      if (postUppgifterHandlaggareResponse.getOperativUppgift() == null)
+      {
+         throw new RuntimeException("Ingen uppgift hittades");
+      }
+      return postUppgifterHandlaggareResponse;
+   }
 
-    private static PostHandlaggningResponse sendHandlaggningRequest(UUID yrkandeId) throws IOException, InterruptedException {
-        var handlaggningRequest = new PostHandlaggningRequest();
-        handlaggningRequest.setYrkandeId(yrkandeId);
-        handlaggningRequest.handlaggningspecifikationId(UUID.randomUUID());
+   public static <T> HttpResponse<T> httpSendRetries(
+         HttpClient client,
+         HttpRequest request,
+         HttpResponse.BodyHandler<T> bodyHandler,
+         int expectedStatus,
+         int numberOfRetries)
+   {
 
-        var jsonBody = mapper.writeValueAsString(handlaggningRequest);
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(HANDLAGGNING_URL))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        return mapper.readValue(response.body(), PostHandlaggningResponse.class);
-    }
+      int attempt = 0;
+      HttpResponse<T> response = null;
 
-    @DisplayName("Smoke test för VAH flöde")
-    @ParameterizedTest(name = "POST med personnummer={0}")
-    @CsvSource({
-            "19900101-9999, 7d4a6c38-348b-4f46-9278-b1bfeabc0353, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
-    })
-    void smokeTest_VahRequest(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
-        var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
-        var yrkandeTom = LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+      while (attempt < numberOfRetries)
+      {
+         attempt++;
+         try
+         {
+            response = client.send(request, bodyHandler);
+            if (response.statusCode() == expectedStatus)
+            {
+               System.out.printf("httpSendRetries Attempt %s successful waiting for status %s%n", attempt, expectedStatus);
+               return response; // success
+            }
+            System.out.printf("httpSendRetries Attempt %s failed with status code %s%n", attempt, response.statusCode());
+         }
+         catch (IOException | InterruptedException e)
+         {
+            System.out.printf("httpSendRetries Attempt %s failed with exception %s%n", attempt, e.getMessage());
+         }
+         try
+         {
+            Thread.sleep(1000);
+         }
+         catch (InterruptedException ignored)
+         {
+         }
+      }
 
-        // service-handlaggning
+      throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");
+   }
 
-        // send YrkandeRequest
-        PostYrkandeResponse yrkandeResponse =
-                sendYrkandeRequest(individPnr, erbjudandeId, yrkandeFrom, yrkandeTom);
-        // send HandlaggningRequest
-        PostHandlaggningResponse handlaggningResponse =
-                sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
-        var handlaggningId = handlaggningResponse.getHandlaggning().getId();
-        assertEquals(yrkandeResponse.getYrkande().getId(),
-                handlaggningResponse.getHandlaggning().getYrkande().getId());
-        assertEquals(yrkandeFrom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
-        assertEquals(yrkandeTom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
-        assertEquals(erbjudandeId, handlaggningResponse.getHandlaggning().getYrkande().getErbjudandeId());
+   private static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return mapper.readValue(response.body(), GetDataResponse.class);
 
-        // rtf-manuell
+   }
 
-        // tilldela uppgift
-        var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
-        assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
-        var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
-        // hämta url för uppgift
-        var regelGetDataResponse = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
-        var ersattningId = regelGetDataResponse.getErsattningar().getFirst().getErsattningId();
-        assertEquals(handlaggningId, regelGetDataResponse.getHandlaggningId());
-        // färdigställ uppgift
-        var patchResult = sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId);
-        assertEquals(204, patchResult);
-        // marker uppgift som klar
-        var doneOperationResult = sendDoneOperation(RTF_MANUELL_BASE_URL, String.valueOf(handlaggningId), regelUrl);
-        assertEquals(204, doneOperationResult);
+   private static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId)
+         throws IOException, InterruptedException
+   {
+      var updateErsattning = new UpdateErsattning();
+      updateErsattning.setErsattningId(ersattningId);
+      updateErsattning.setBeslutsutfall(beslutsUtfall);
+      updateErsattning.setAvslagsanledning("-");
 
-        // bekraftabeslut
+      var patchErsattningRequest = new PatchErsattningRequest();
+      patchErsattningRequest.setErsattningar(List.of(updateErsattning));
 
-        // tilldela uppgift
-        uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
-        assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
-        regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
-        // markera uppgift som klar
-        doneOperationResult = sendDoneOperation(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl);
-        assertEquals(204, doneOperationResult);
+      String jsonBody = mapper.writeValueAsString(patchErsattningRequest);
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(jsonBody))
+            .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response.statusCode();
+   }
 
-        // vah
+   private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + regelUrl + "/" + handlaggningId + "/done"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response.statusCode();
+   }
 
-        // assert kafka done message
-        getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());
-    }
- 
+   private static PostHandlaggningResponse sendHandlaggningRequest(UUID yrkandeId) throws IOException, InterruptedException
+   {
+      var handlaggningRequest = new PostHandlaggningRequest();
+      handlaggningRequest.setYrkandeId(yrkandeId);
+      handlaggningRequest.handlaggningspecifikationId(UUID.randomUUID());
+
+      var jsonBody = mapper.writeValueAsString(handlaggningRequest);
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_URL))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertEquals(200, response.statusCode());
+      return mapper.readValue(response.body(), PostHandlaggningResponse.class);
+   }
+
+   @DisplayName("Smoke test för VAH flöde")
+   @ParameterizedTest(name = "POST med personnummer={0}")
+   @CsvSource(
+   {
+         "19900101-9999, 7d4a6c38-348b-4f46-9278-b1bfeabc0353, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
+   })
+   void smokeTest_VahRequest(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId)
+         throws IOException, InterruptedException
+   {
+      var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+      var yrkandeTom = LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+
+      // service-handlaggning
+
+      // send YrkandeRequest
+      PostYrkandeResponse yrkandeResponse = sendYrkandeRequest(individPnr, erbjudandeId, yrkandeFrom, yrkandeTom);
+      // send HandlaggningRequest
+      PostHandlaggningResponse handlaggningResponse = sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
+      var handlaggningId = handlaggningResponse.getHandlaggning().getId();
+      assertEquals(yrkandeResponse.getYrkande().getId(),
+            handlaggningResponse.getHandlaggning().getYrkande().getId());
+      assertEquals(yrkandeFrom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
+      assertEquals(yrkandeTom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
+      assertEquals(erbjudandeId, handlaggningResponse.getHandlaggning().getYrkande().getErbjudandeId());
+
+      // rtf-manuell
+
+      // tilldela uppgift
+      var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
+      assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
+      var regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
+      // hämta url för uppgift
+      var regelGetDataResponse = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
+      var ersattningId = regelGetDataResponse.getErsattningar().getFirst().getErsattningId();
+      assertEquals(handlaggningId, regelGetDataResponse.getHandlaggningId());
+      // färdigställ uppgift
+      var patchResult = sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId);
+      assertEquals(204, patchResult);
+      // marker uppgift som klar
+      var doneOperationResult = sendDoneOperation(RTF_MANUELL_BASE_URL, String.valueOf(handlaggningId), regelUrl);
+      assertEquals(204, doneOperationResult);
+
+      // bekraftabeslut
+
+      // tilldela uppgift
+      uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId);
+      assertEquals(handlaggningId, uppgifterHandlaggareResponse.getOperativUppgift().getHandlaggningId());
+      regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
+      // markera uppgift som klar
+      doneOperationResult = sendDoneOperation(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl);
+      assertEquals(204, doneOperationResult);
+
+      // vah
+
+      // assert kafka done message
+      getKafkaMessage(handlaggningDoneConsumer, handlaggningResponse.getHandlaggning().getId().toString());
+   }
+
 }

@@ -60,11 +60,38 @@ public class SmokeTestIT {
     private static KafkaConsumer<String, String> handlaggningDoneConsumer;
     private static final String handlaggningDoneTopic = "handlaggning-done";
 
+    private static final List<String> SERVICE_BASE_URLS = List.of(
+            HANDLAGGNING_BASE_URL, OUL_BASE_URL, RTF_MANUELL_BASE_URL, BEKRAFTABESLUT_BASE_URL);
+
     @BeforeAll
-    static void setup()
-    {
+    static void setup() throws Exception {
         mapper.registerModule(new JavaTimeModule());
+        waitForServices();
         handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
+    }
+
+    static void waitForServices() throws InterruptedException {
+        var deadline = java.time.Instant.now().plusSeconds(60);
+        for (String baseUrl : SERVICE_BASE_URLS) {
+            String healthUrl = baseUrl + "/q/health";
+            while (true) {
+                try {
+                    var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().build();
+                    int status = client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+                    if (status == 200) {
+                        System.out.println("Service ready: " + healthUrl);
+                        break;
+                    }
+                    System.out.printf("Service not ready (%d): %s%n", status, healthUrl);
+                } catch (Exception e) {
+                    System.out.printf("Service not reachable: %s (%s)%n", healthUrl, e.getMessage());
+                }
+                if (java.time.Instant.now().isAfter(deadline)) {
+                    fail("Service not ready after 60s: " + healthUrl);
+                }
+                Thread.sleep(2000);
+            }
+        }
     }
 
     @AfterAll

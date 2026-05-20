@@ -50,13 +50,14 @@ public class SmokeTestIT {
     private static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
     private static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static ObjectMapper mapper = new ObjectMapper();
-    private static KafkaConsumer handlaggningDoneConsumer;
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static KafkaConsumer<String, String> handlaggningDoneConsumer;
     private static final String handlaggningDoneTopic = "handlaggning-done";
 
     @BeforeAll
     static void setup()
     {
+        mapper.registerModule(new JavaTimeModule());
         handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
     }
     static KafkaConsumer<String, String> createKafkaConsumer(String topic)
@@ -76,8 +77,7 @@ public class SmokeTestIT {
         return consumer;
     }
 
-    public boolean hasHandlaggningId(String json, String handlaggningId) {
-        ObjectMapper mapper = new ObjectMapper();
+    private static boolean hasHandlaggningId(String json, String handlaggningId) {
         try {
             JsonNode root = mapper.readTree(json);
             return handlaggningId.equals(
@@ -270,7 +270,6 @@ public class SmokeTestIT {
             "19900101-9999, 7d4a6c38-348b-4f46-9278-b1bfeabc0353, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
     })
     void smokeTest_VahRequest(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId) throws IOException, InterruptedException {
-        mapper.registerModule(new JavaTimeModule());
         var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
         var yrkandeTom = LocalDate.parse(slutdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
 

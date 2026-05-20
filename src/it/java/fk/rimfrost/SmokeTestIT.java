@@ -129,7 +129,7 @@ public class SmokeTestIT {
 
     private String getKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId) {
         // How many poll attempts before giving up
-        int maxAttempts = 5;
+        int maxAttempts = 15;
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));

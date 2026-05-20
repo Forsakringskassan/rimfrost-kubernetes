@@ -344,7 +344,7 @@ public class SmokeTestIT
    {
          "19900101-9999, 7d4a6c38-348b-4f46-9278-b1bfeabc0353, 2025-12-24, 2025-12-24, 3f439f0d-a915-42cb-ba8f-6a4170c6011f"
    })
-   void smokeTest_VahRequest(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId)
+   void smoke_test_vah_request(String individPnr, String erbjudandeId, String startdag, String slutdag, String handlaggareId)
          throws IOException, InterruptedException
    {
       var yrkandeFrom = LocalDate.parse(startdag).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());

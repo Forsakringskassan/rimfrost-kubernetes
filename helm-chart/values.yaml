@@ -12,6 +12,13 @@ quarkusDefaults:
 strimzi:
   enabled: true
 
+postgresql:
+  enabled: true
+  auth:
+    database: rtfmanuell
+    username: rtfmanuell
+    password: rtfmanuell
+
 kafka:
   enabled: true
   name: dev-kafka
@@ -68,10 +75,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.0.0
-      #repository: rimfrost/rimfrost-regel-rtf-manuell
-      #tag: latest
-      #pullPolicy: Never
+      tag: 1.1.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -79,7 +83,14 @@ quarkus:
         value: "true"
       - name: JAVA_TOOL_OPTIONS
         value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rtfmanuell"
+      - name: DB_USERNAME
+        value: "rtfmanuell"
+      - name: DB_PASSWORD
+        value: "rtfmanuell"
     waitForKafka: true
+    waitForPostgres: true
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut

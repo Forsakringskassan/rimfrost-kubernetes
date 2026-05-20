@@ -10,7 +10,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -60,32 +59,6 @@ public class SmokeTestIT {
     {
         handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
     }
-    /**
-     * Waits for the given URL to become reachable (HTTP 200).
-     */
-    @SuppressWarnings("SameParameterValue")
-    private static void waitForService(String url, int maxAttempts, int sleepSeconds)
-            throws InterruptedException {
-        for (int i = 0; i < maxAttempts; i++) {
-            try {
-                var request = HttpRequest.newBuilder()
-                        .uri(URI.create(url))
-                        .timeout(Duration.ofSeconds(3))
-                        .GET()
-                        .build();
-                var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() == 200) {
-                    System.out.println("Service is up at " + url);
-                    return;
-                }
-            } catch (Exception ignored) {
-                System.out.println("Waiting for service at " + url + "...");
-            }
-            Thread.sleep(sleepSeconds * 1000L);
-        }
-        fail("Service at " + url + " did not become ready in time");
-    }
-
     static KafkaConsumer<String, String> createKafkaConsumer(String topic)
     {
         String bootstrap = System.getenv().getOrDefault(
@@ -101,17 +74,6 @@ public class SmokeTestIT {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Collections.singletonList(topic));
         return consumer;
-    }
-
-    private String readKafkaMessage(KafkaConsumer<String, String> consumer)
-    {
-        ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(120));
-        if (records.isEmpty())
-        {
-            throw new IllegalStateException("No Kafka message received on topic ");
-        }
-        // return the first new record
-        return records.iterator().next().value();
     }
 
     public boolean hasHandlaggningId(String json, String handlaggningId) {

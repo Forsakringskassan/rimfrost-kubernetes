@@ -247,7 +247,7 @@ public class SmokeTestIT {
         return response.statusCode();
     }
 
-       private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
+    private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
             .uri(URI.create(baseUrl + regelUrl +  "/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")

@@ -38,7 +38,8 @@ public class PersistenceIT extends RimfrostTestSupport
       // Assign task and patch beslutsutfall to JA
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
       var regelUrl = uppgifterResponse.getOperativUppgift().getUrl();
-      var ersattningId = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst().getErsattningId();
+      var ersattningId = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst()
+            .getErsattningId();
       assertEquals(204, sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId));
 
       // Restart the rtf-manuell pod and re-establish port-forward
@@ -47,7 +48,8 @@ public class PersistenceIT extends RimfrostTestSupport
       waitForService(RTF_MANUELL_BASE_URL, "/q/health", 180);
 
       // Assert data survived the restart
-      var beslutsutfall = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst().getBeslutsutfall();
+      var beslutsutfall = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst()
+            .getBeslutsutfall();
       assertEquals(Beslutsutfall.JA, beslutsutfall, "beslutsutfall should be persisted after pod restart");
    }
 

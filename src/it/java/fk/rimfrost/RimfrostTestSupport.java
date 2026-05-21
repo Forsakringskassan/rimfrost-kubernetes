@@ -184,7 +184,8 @@ abstract class RimfrostTestSupport
       int attempt = 0;
       do
       {
-         System.out.printf("sendUppgifterHandlaggare attempt %d waiting for task with handlaggningId %s%n", attempt, expectedHandlaggningId);
+         System.out.printf("sendUppgifterHandlaggare attempt %d waiting for task with handlaggningId %s%n", attempt,
+               expectedHandlaggningId);
          var httpResponse = httpSendRetries(client, request, HttpResponse.BodyHandlers.ofString(), 200, 5);
          response = mapper.readValue(httpResponse.body(), PostUppgifterHandlaggareResponse.class);
          attempt++;

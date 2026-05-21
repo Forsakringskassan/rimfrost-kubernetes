@@ -49,10 +49,11 @@ spec:
           args:
             - |
               echo "Waiting for PostgreSQL at {{ $.Release.Name }}-postgresql:5432 ..."
-              until nc -z {{ $.Release.Name }}-postgresql 5432; do
-                echo "…not yet"; sleep 2
+              for i in $(seq 1 300); do
+                nc -z {{ $.Release.Name }}-postgresql 5432 && echo "PostgreSQL is up" && exit 0
+                echo "…not yet (try $i/300)"; sleep 2
               done
-              echo "PostgreSQL is up"
+              echo "PostgreSQL not ready in time"; exit 1
         {{ end }}
       {{ end }}
       containers:

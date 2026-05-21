@@ -1,62 +1,49 @@
 #!/bin/bash
-echo "Sleeping 30 sec making sure that applications are responding before forwarding"
-sleep 30
-echo "Finding service matching with '-yrkande'"
-HANDLAGGNING_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-handlaggning' | head -n 1 | tr -d '[:space:]')
-echo "HANDLAGGNING_SERVICE='$HANDLAGGNING_SERVICE'"
-if [ -n "$HANDLAGGNING_SERVICE" ]; then
-  echo "Starting port-forward: kubectl port-forward service/$HANDLAGGNING_SERVICE 8888:8080"
-  nohup kubectl port-forward service/"$HANDLAGGNING_SERVICE" 8888:8080 > portforward_yrkande.log 2>&1 &
-  echo $! > portforward_yrkande.pid
-else
-  echo "No service ending with '-yrkande' found — skipping port-forward."
-fi
+echo "Stopping any existing port-forwards..."
+for pid_file in portforward_*.pid; do
+  [ -f "$pid_file" ] && kill "$(cat "$pid_file")" 2>/dev/null && rm "$pid_file"
+done
 
-echo "Finding service matching with '-uppgiftslager'"
-OUL_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-uppgiftslager' | head -n 1 | tr -d '[:space:]')
-echo "OUL='$OUL_SERVICE'"
-if [ -n "$OUL_SERVICE" ]; then
-  echo "Starting port-forward: kubectl port-forward service/$OUL_SERVICE 8889:8080"
-  nohup kubectl port-forward service/"$OUL_SERVICE" 8889:8080 > portforward_oul.log 2>&1 &
-  echo $! > portforward_oul.pid
-else
-  echo "No service ending with '-uppgiftslager' found — skipping port-forward."
-fi
+echo "Waiting for all deployments to be ready..."
+kubectl wait --for=condition=available deployment \
+  --all \
+  --namespace=default \
+  --timeout=120s
 
-echo "Finding service matching with '-rtf-manuell'"
-RTF_MANUELL_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-rtf-manuell' | head -n 1 | tr -d '[:space:]')
-echo "RTF_MANUELL_SERVICE='$RTF_MANUELL_SERVICE'"
-if [ -n "$RTF_MANUELL_SERVICE" ]; then
-  echo "Starting port-forward: kubectl port-forward service/$RTF_MANUELL_SERVICE 8890:8080"
-  nohup kubectl port-forward service/"$RTF_MANUELL_SERVICE" 8890:8080 > portforward_rtf_manuell.log 2>&1 &
-  echo $! > portforward_rtf_manuell.pid
-else
-  echo "No service ending with '-rtf-manuell' found — skipping port-forward."
-fi
+forward_service() {
+  local pattern=$1 local_port=$2 log_name=$3
+  local svc
+  svc=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" \
+    | grep -- "$pattern" | head -n 1 | tr -d '[:space:]')
+  if [ -n "$svc" ]; then
+    echo "Starting port-forward: service/$svc $local_port:8080"
+    nohup kubectl port-forward "service/$svc" "$local_port:8080" \
+      > "portforward_${log_name}.log" 2>&1 &
+    echo $! > "portforward_${log_name}.pid"
+  else
+    echo "No service matching '$pattern' found — skipping."
+  fi
+}
 
-echo "Finding service matching with '-bekraftabeslut'"
-BEKRAFTABESLUT_SERVICE=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" | grep -- '-bekraftabeslut' | head -n 1 | tr -d '[:space:]')
-echo "BEKRAFTABESLUT_SERVICE='$BEKRAFTABESLUT_SERVICE'"
-if [ -n "$BEKRAFTABESLUT_SERVICE" ]; then
-  echo "Starting port-forward: kubectl port-forward service/$BEKRAFTABESLUT_SERVICE 8891:8080"
-  nohup kubectl port-forward service/"$BEKRAFTABESLUT_SERVICE" 8891:8080 > portforward_bekraftabeslut.log 2>&1 &
-  echo $! > portforward_bekraftabeslut.pid
-else
-  echo "No service ending with '-bekraftabeslut' found — skipping port-forward."
-fi
-
+forward_service '-handlaggning'  8888 handlaggning
+forward_service '-uppgiftslager' 8889 oul
+forward_service '-rtf-manuell'   8890 rtf_manuell
+forward_service '-bekraftabeslut' 8891 bekraftabeslut
 
 # Port forwarding to kafka external nodeport listener
-echo "Starting port-forward: kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094"
+echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
 nohup kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094 >> portforward.log 2>&1 &
+echo $! > portforward_kafka.pid
 
-echo "Finding pod matching '-rtf-manuell'"
-RTF_MANUELL_POD=$(kubectl get pod -n default --no-headers -o custom-columns=":metadata.name"| grep -- '-rtf-manuell')
-echo "RTF_MANUELL_POD='$RTF_MANUELL_POD'"
-if [ -n "$RTF_MANUELL_POD" ]; then
-  echo "Starting port-forward: kubectl port-forward pod/RTF_MANUELL_POD 5005:5005"
-  nohup kubectl port-forward pod/"$RTF_MANUELL_POD" 5005:5005 > portforward_rtf_manuell_debug.log 2>&1 &
-  echo $! > portforward_rtf_manuell_debug.pid
-else
-  echo "No pod matching '-rtf-manuell' found — skipping port-forward."
+# Debug port-forward for rtf-manuell (opt-in via --debug)
+if [ "${1:-}" = "--debug" ]; then
+  pod=$(kubectl get pod -n default --no-headers -o custom-columns=":metadata.name" \
+    | grep -- '-rtf-manuell' | head -n 1)
+  if [ -n "$pod" ]; then
+    echo "Starting debug port-forward: pod/$pod 5005:5005"
+    nohup kubectl port-forward "pod/$pod" 5005:5005 > portforward_rtf_manuell_debug.log 2>&1 &
+    echo $! > portforward_rtf_manuell_debug.pid
+  else
+    echo "No pod matching '-rtf-manuell' found — skipping debug port-forward."
+  fi
 fi

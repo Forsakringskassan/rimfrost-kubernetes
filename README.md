@@ -2,12 +2,57 @@
 
 Kubernetes deployment of Rimfrost PoC for VAH (Vård av husdjur)
 
-Start it with `./deploy.sh`.
-Clean it with `./cleanup.sh`.
+## Running integration tests
+
+```sh
+mvn verify
+```
+
+This automatically deploys the environment (`deploy.sh`), runs the integration tests, and tears it down (`cleanup.sh`).
+
+## Starting and stopping the environment manually
+
+To start without running tests (e.g. for exploratory testing):
+
+```sh
+./deploy.sh
+```
+
+To skip port-forwarding (e.g. in CI):
+
+```sh
+./deploy.sh --no-pf
+```
+
+To stop and clean up:
+
+```sh
+./cleanup.sh
+```
 
 ## Port forwarding
 
-Start with `./deploy.sh --pf` to trigger port forwarding to open port for accessing the VAH service
+Port-forwarding is started automatically by `deploy.sh`. To restart it manually:
+
+```sh
+./port-forward.sh
+```
+
+To also expose the remote debug port (5005) for `rtf-manuell`:
+
+```sh
+./port-forward.sh --debug
+```
+
+The following ports are forwarded:
+
+| Service | Local port |
+|---------|------------|
+| handlaggning | 8888 |
+| uppgiftslager | 8889 |
+| rtf-manuell | 8890 |
+| bekraftabeslut | 8891 |
+| Kafka | 9094 |
 
 ## Useful Commands
 

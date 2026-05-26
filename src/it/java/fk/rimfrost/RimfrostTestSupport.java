@@ -63,7 +63,7 @@ abstract class RimfrostTestSupport
       {
          try
          {
-            var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().build();
+            var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().timeout(Duration.ofSeconds(5)).build();
             var response = client.send(request, HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() < 500)
             {

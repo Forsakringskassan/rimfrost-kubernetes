@@ -44,8 +44,7 @@ public class PersistenceIT extends RimfrostTestSupport
 
       // Restart the rtf-manuell pod and re-establish port-forward
       restartDeployment("rimfrost-k8s-rtf-manuell");
-      restartPortForward("rimfrost-k8s-rtf-manuell", 8890);
-      waitForService(RTF_MANUELL_BASE_URL, "/q/health", 180);
+      waitForServiceRestartingPortForward("rimfrost-k8s-rtf-manuell", 8890, RTF_MANUELL_BASE_URL, 180);
 
       // Assert data survived the restart
       var beslutsutfall = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst()
@@ -72,12 +71,55 @@ public class PersistenceIT extends RimfrostTestSupport
       }
    }
 
-   private static void restartPortForward(String serviceName, int localPort) throws IOException, InterruptedException
+   /**
+    * Waits for the service health endpoint to return a non-error response, restarting the port-forward process
+    * whenever it dies. This is necessary because {@code kubectl port-forward} exits when the backend pod is
+    * unreachable — which happens immediately after a pod restart, before the new pod starts listening. Without
+    * active restarts, all health-check attempts would fail with "connection refused" for the full timeout.
+    */
+   private static void waitForServiceRestartingPortForward(String serviceName, int localPort, String baseUrl,
+         int timeoutSeconds) throws IOException, InterruptedException
    {
-      System.out.println("Restarting port-forward for " + serviceName + " on port " + localPort);
+      System.out.println("Waiting for " + baseUrl + " (restarting port-forward as needed)");
       new ProcessBuilder("sh", "-c", "pkill -f 'kubectl port-forward.*" + localPort + "' 2>/dev/null; true")
             .start().waitFor();
-      new ProcessBuilder("kubectl", "port-forward", "service/" + serviceName, localPort + ":8080")
+      var deadline = java.time.Instant.now().plusSeconds(timeoutSeconds);
+      Process pf = startPortForward(serviceName, localPort);
+      while (true)
+      {
+         if (!pf.isAlive())
+         {
+            pf = startPortForward(serviceName, localPort);
+            Thread.sleep(500);
+         }
+         else
+         {
+            try
+            {
+               var request = java.net.http.HttpRequest.newBuilder(java.net.URI.create(baseUrl + "/q/health"))
+                     .GET()
+                     .timeout(java.time.Duration.ofSeconds(5))
+                     .build();
+               var response = client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
+               if (response.statusCode() < 500)
+               {
+                  System.out.println("Service ready: " + baseUrl);
+                  return;
+               }
+            }
+            catch (Exception ignored)
+            {
+            }
+         }
+         if (java.time.Instant.now().isAfter(deadline))
+            fail("Service not ready after " + timeoutSeconds + "s: " + baseUrl + "/q/health");
+         Thread.sleep(1000);
+      }
+   }
+
+   private static Process startPortForward(String serviceName, int localPort) throws IOException
+   {
+      return new ProcessBuilder("kubectl", "port-forward", "service/" + serviceName, localPort + ":8080")
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start();

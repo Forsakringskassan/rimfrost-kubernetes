@@ -77,11 +77,9 @@ public class PersistenceIT extends RimfrostTestSupport
       System.out.println("Restarting port-forward for " + serviceName + " on port " + localPort);
       new ProcessBuilder("sh", "-c", "pkill -f 'kubectl port-forward.*" + localPort + "' 2>/dev/null; true")
             .start().waitFor();
-      Thread.sleep(1000);
       new ProcessBuilder("kubectl", "port-forward", "service/" + serviceName, localPort + ":8080")
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start();
-      Thread.sleep(2000);
    }
 }

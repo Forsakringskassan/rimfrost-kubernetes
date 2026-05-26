@@ -64,9 +64,12 @@ abstract class RimfrostTestSupport
          try
          {
             var request = HttpRequest.newBuilder(URI.create(healthUrl)).GET().build();
-            client.send(request, HttpResponse.BodyHandlers.discarding());
-            System.out.println("Service ready: " + healthUrl);
-            return;
+            var response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            if (response.statusCode() < 500)
+            {
+               System.out.println("Service ready: " + healthUrl);
+               return;
+            }
          }
          catch (Exception ignored)
          {

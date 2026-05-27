@@ -12,6 +12,13 @@ quarkusDefaults:
 strimzi:
   enabled: true
 
+postgresql:
+  enabled: true
+  auth:
+    database: rimfrost-test
+    username: rimfrost-test
+    password: rimfrost-test
+
 kafka:
   enabled: true
   name: dev-kafka
@@ -38,7 +45,7 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.0.0
+      tag: 1.0.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -68,10 +75,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.0.0
-      #repository: rimfrost/rimfrost-regel-rtf-manuell
-      #tag: latest
-      #pullPolicy: Never
+      tag: 1.2.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -79,17 +83,31 @@ quarkus:
         value: "true"
       - name: JAVA_TOOL_OPTIONS
         value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+      - name: DB_USERNAME
+        value: "rimfrost-test"
+      - name: DB_PASSWORD
+        value: "rimfrost-test"
     waitForKafka: true
+    waitForPostgres: true
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 1.0.0
+      tag: 1.1.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+      - name: DB_USERNAME
+        value: "rimfrost-test"
+      - name: DB_PASSWORD
+        value: "rimfrost-test"
     waitForKafka: true
+    waitForPostgres: true
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning

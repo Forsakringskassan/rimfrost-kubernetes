@@ -28,58 +28,31 @@ fi
 echo "🔧 Starting Minikube..."
 minikube start --driver=docker --cpus=4 --memory=8192
 
-# Enable ingress addon
+# Enable ingress addon (skip if already enabled)
 echo "🌐 Enabling ingress addon..."
-minikube addons disable ingress
-minikube addons enable ingress
+if minikube addons list | awk '/\| ingress/{print}' | grep -q enabled; then
+  echo "✅ Ingress addon already enabled — skipping"
+else
+  minikube addons enable ingress
+fi
 
 echo "🔄 Adding strimzi to repo list..."
 if ! helm repo list | awk 'NR>1{print $1}' | grep -qx strimzi; then
   helm repo add strimzi https://strimzi.io/charts/
 fi
 
-# Wait for ingress controller to be ready
+# Wait for ingress controller pod and admission webhook to be ready
 echo "⏳ Waiting for ingress controller to be ready..."
-for i in {1..60}; do
-  if kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller --field-selector=status.phase=Running | grep -q Running; then
-    echo "✅ Ingress controller is ready"
-    break
-  fi
-  echo "   Attempt $i/60: Waiting for ingress controller..."
-  sleep 2
-done
-
-# Wait a bit more for the admission webhook to be ready
-echo "⏳ Waiting for ingress admission webhook to be ready..."
-sleep 30
-
-# Verify webhook is responding
-echo "🔍 Verifying admission webhook..."
-for i in {1..10}; do
-  if kubectl get validatingwebhookconfiguration ingress-nginx-admission &>/dev/null; then
-    echo "✅ Admission webhook is ready"
-    break
-  fi
-  echo "   Attempt $i/10: Waiting for admission webhook..."
-  sleep 10
-done
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
 
 # Deploy the application using Helm
 echo "📦 Building dependencies..."
 helm dependency build ./helm-chart
 
-if ! helm upgrade --install rimfrost-k8s ./helm-chart --wait; then
-  echo "⚠️  Deployment failed, likely due to admission webhook not ready"
-  echo "🔄 Retrying with webhook bypass..."
-  
-  # Temporarily disable admission webhook validation
-  kubectl delete validatingwebhookconfiguration ingress-nginx-admission 2>/dev/null || true
-  
-  # Deploy without webhook validation
-  helm upgrade --install rimfrost-k8s ./helm-chart --wait
-  
-  echo "✅ Deployment completed (webhook validation bypassed)"
-fi
+helm upgrade --install rimfrost-k8s ./helm-chart --wait
 
 # Get the ingress IP
 echo "🔍 Getting ingress information..."
@@ -94,9 +67,9 @@ echo ""
 echo "   http://$INGRESS_IP/"
 echo ""
 
-if [ "${1:-}" = "--pf" ]; then
-  echo "Port forwarding enabled — running port-forward.sh..."
-  ./port-forward.sh
-else
+if [ "${1:-}" = "--no-pf" ]; then
   echo "Skipping port forwarding."
+else
+  echo "Starting port forwarding..."
+  ./port-forward.sh
 fi

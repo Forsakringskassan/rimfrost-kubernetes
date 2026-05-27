@@ -110,4 +110,4 @@ create_customer_need_flow "19900101-1234" "2025-08-01T08:00:00+01:00" "2025-09-0
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}
 
-assign_case_worker "116759e4-18fd-4209-849c-90abbd257d22" "469ddd20-6796-4e05-9e18-6a95953f6cb3"
+assign_case_worker "116759e4-18fd-4209-849c-90abbd257d22" "3f439f0d-a915-42cb-ba8f-6a4170c6011f"

@@ -205,6 +205,18 @@ abstract class RimfrostTestSupport
       return response;
    }
 
+   static GetUppgifterHandlaggareResponse sendGetUppgifterHandlaggare(String handlaggareId)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return mapper.readValue(response.body(), GetUppgifterHandlaggareResponse.class);
+   }
+
    static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl)
          throws IOException, InterruptedException
    {

@@ -18,6 +18,14 @@ kafka:
   version: "3.9.1"
   topic: handlaggning-done
 
+postgres:
+  enabled: true
+  image: postgres:17-alpine
+  username: vah
+  password: vah
+  database: vah
+  storage: 2Gi
+
 
 quarkus:
   - name: folkbokford
@@ -54,7 +62,29 @@ quarkus:
         value: "dev-kafka-kafka-bootstrap:9092"
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
+      - name: DB_HOST
+        value: "rimfrost-k8s-postgres"
+      - name: DB_PORT
+        value: "5432"
+      - name: DB_NAME
+        valueFrom:
+          secretKeyRef:
+            name: rimfrost-k8s-postgres
+            key: database
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: rimfrost-k8s-postgres
+            key: username
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: rimfrost-k8s-postgres
+            key: password
     waitForKafka: true
+    waitForPostgres: true
+    postgresHost: rimfrost-k8s-postgres
+    postgresPort: 5432
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell

@@ -65,8 +65,8 @@ for i in {1..10}; do
 done
 
 # Deploy the application using Helm
-echo "📦 Building dependencies..."
-helm dependency build ./helm-chart
+echo "📦 Updating chart dependencies..."
+helm dependency update ./helm-chart
 
 if ! helm upgrade --install rimfrost-k8s ./helm-chart --wait; then
   echo "⚠️  Deployment failed, likely due to admission webhook not ready"

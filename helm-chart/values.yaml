@@ -30,12 +30,12 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: 1.0.0
+      tag: 1.0.1
     waitForKafka: false
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
-      tag: 1.0.0
+      tag: 1.0.1
     waitForKafka: false
   - name: referensdata
     image:
@@ -63,6 +63,7 @@ quarkus:
       - name: DB_PASSWORD
         value: "rimfrost-test"
     waitForKafka: true
+    waitForPostgres: true
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
@@ -131,7 +132,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 1.1.4
+      tag: 1.1.5
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

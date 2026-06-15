@@ -144,6 +144,7 @@ abstract class RimfrostTestSupport
       yrkandeRequest.setErbjudandeId(erbjudandeId);
       yrkandeRequest.setYrkandeFrom(yrkandeFrom);
       yrkandeRequest.setYrkandeTom(yrkandeTom);
+      yrkandeRequest.setHandlaggningspecifikationId(UUID.randomUUID());
       yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
       yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
 
@@ -155,23 +156,6 @@ abstract class RimfrostTestSupport
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
       return mapper.readValue(response.body(), PostYrkandeResponse.class);
-   }
-
-   static PostHandlaggningResponse sendHandlaggningRequest(UUID yrkandeId) throws IOException, InterruptedException
-   {
-      var handlaggningRequest = new PostHandlaggningRequest();
-      handlaggningRequest.setYrkandeId(yrkandeId);
-      handlaggningRequest.handlaggningspecifikationId(UUID.randomUUID());
-
-      var request = HttpRequest.newBuilder()
-            .uri(URI.create(HANDLAGGNING_URL))
-            .header("Content-Type", "application/json")
-            .timeout(Duration.ofSeconds(10))
-            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(handlaggningRequest)))
-            .build();
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      assertEquals(200, response.statusCode());
-      return mapper.readValue(response.body(), PostHandlaggningResponse.class);
    }
 
    static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId, UUID expectedHandlaggningId)

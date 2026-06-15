@@ -119,12 +119,12 @@ public class SmokeTestIT extends RimfrostTestSupport
 
       // service-handlaggning
       var yrkandeResponse = sendYrkandeRequest(individPnr, erbjudandeId, yrkandeFrom, yrkandeTom);
-      var handlaggningResponse = sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
-      var handlaggningId = handlaggningResponse.getHandlaggning().getId();
-      assertEquals(yrkandeResponse.getYrkande().getId(), handlaggningResponse.getHandlaggning().getYrkande().getId());
-      assertEquals(yrkandeFrom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
-      assertEquals(yrkandeTom.toInstant(), handlaggningResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
-      assertEquals(erbjudandeId, handlaggningResponse.getHandlaggning().getYrkande().getErbjudandeId());
+      var handlaggningId = yrkandeResponse.getHandlaggning().getId();
+      assertEquals(yrkandeResponse.getHandlaggning().getYrkande().getId(),
+            yrkandeResponse.getHandlaggning().getYrkande().getId());
+      assertEquals(yrkandeFrom.toInstant(), yrkandeResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
+      assertEquals(yrkandeTom.toInstant(), yrkandeResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
+      assertEquals(erbjudandeId, yrkandeResponse.getHandlaggning().getYrkande().getErbjudandeId());
 
       // rtf-manuell
       var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId, handlaggningId);

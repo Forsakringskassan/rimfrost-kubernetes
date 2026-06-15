@@ -34,32 +34,12 @@ function create_customer_need_flow() {
                         "typ": "ERSATTNING",
                         "data": "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}"
                     }
-                ]
+                ],
+                "handlaggningspecifikationId": "7aa3a1ea-31fd-4049-8a9e-128fe07f4cbe"
             }' 2>/dev/null`
 
     if [ $? -ne 0 ]; then
         echo "❌ Could not create customer need for individ id ${INDIVID_ID}"
-        return 1
-    fi
-
-    CUSTOMER_NEED_ID=`echo "${CUSTOMER_NEED}" | jq -e '.yrkande["id"]' | sed -E 's/"(.*)"/\1/'`
-
-    if [ $? -ne 0 ]; then
-        echo "❌ Could not extract customer need id from customer need for individ id ${INDIVID_ID}"
-        return 1
-    fi
-
-    curl --fail -X 'POST' \
-        'http://localhost:8888/handlaggning' \
-        -H 'accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d '{
-            "yrkandeId": "'"${CUSTOMER_NEED_ID}"'",
-            "handlaggningspecifikationId": "287cc231-c05d-4257-8832-464423e4b1d1"
-        }' > /dev/null 2>&1
-
-    if [ $? -ne 0 ]; then
-        echo "❌ Could not create customer need flow for individ ${INDIVID_ID}"
         return 1
     fi
 

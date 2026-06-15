@@ -37,8 +37,7 @@ public class PersistenceIT extends RimfrostTestSupport
 
       // Create yrkande and handlaggning
       var yrkandeResponse = sendYrkandeRequest("19900101-9999", "7d4a6c38-348b-4f46-9278-b1bfeabc0353", yrkandeFrom, yrkandeTom);
-      var handlaggningResponse = sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
-      var handlaggningId = handlaggningResponse.getHandlaggning().getId();
+      var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Assign task and patch beslutsutfall to JA
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
@@ -66,8 +65,7 @@ public class PersistenceIT extends RimfrostTestSupport
 
       // Create yrkande and handlaggning
       var yrkandeResponse = sendYrkandeRequest("19900101-9999", "7d4a6c38-348b-4f46-9278-b1bfeabc0353", yrkandeFrom, yrkandeTom);
-      var handlaggningResponse = sendHandlaggningRequest(yrkandeResponse.getYrkande().getId());
-      var handlaggningId = handlaggningResponse.getHandlaggning().getId();
+      var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Assign task
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);

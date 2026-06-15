@@ -42,6 +42,11 @@ quarkus:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
       tag: 1.0.0
     waitForKafka: false
+  - name: erbjudande-topic
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande-topic
+      tag: 0.0.1
+    waitForKafka: false
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
@@ -126,7 +131,7 @@ quarkus:
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
-      tag: 1.0.1
+      tag: 1.2.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

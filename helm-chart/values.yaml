@@ -80,6 +80,23 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+  - name: vab
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
+      tag: 0.0.2
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+      - name: DB_USERNAME
+        value: "rimfrost-test"
+      - name: DB_PASSWORD
+        value: "rimfrost-test"
+    waitForKafka: true
+    waitForPostgres: true
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell

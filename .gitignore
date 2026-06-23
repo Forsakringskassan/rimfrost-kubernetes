@@ -1,2 +1,3 @@
-
+helm-chart/Chart.lock
+helm-chart/charts/*
 .idea/

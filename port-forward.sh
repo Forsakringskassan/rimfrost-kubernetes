@@ -25,7 +25,7 @@ forward_service() {
   fi
 }
 
-forward_service '-handlaggning'  8888 handlaggning
+forward_service '-workflow'  8888 workflow
 forward_service '-uppgiftslager' 8889 oul
 forward_service '-rtf-manuell'   8890 rtf_manuell
 forward_service '-bekraftabeslut' 8891 bekraftabeslut

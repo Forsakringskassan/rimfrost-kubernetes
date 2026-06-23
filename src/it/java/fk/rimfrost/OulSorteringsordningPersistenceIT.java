@@ -17,12 +17,10 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
    private static final String TEST_ERBJUDANDE_ID = "7d4a6c38-348b-4f46-9278-b1bfeabc0353";
 
    /** Single-entry spec with a ConstraintEq on STATUS, used to verify entries survive round-trips. */
-   private static final String SPEC_EQ_STATUS =
-         "{\"entries\":[{\"constraints\":[{\"operator\":\"eq\",\"field\":\"status\",\"value\":\"NY\"}],\"sort_by\":{\"field\":\"skapad\",\"direction\":\"asc\"}}]}";
+   private static final String SPEC_EQ_STATUS = "{\"entries\":[{\"constraints\":[{\"operator\":\"eq\",\"field\":\"status\",\"value\":\"NY\"}],\"sort_by\":{\"field\":\"skapad\",\"direction\":\"asc\"}}]}";
 
    /** Catch-all spec (no constraints) sorted by SKAPAD ASC. */
-   private static final String SPEC_CATCH_ALL_ASC =
-         "{\"entries\":[{\"sort_by\":{\"field\":\"skapad\",\"direction\":\"asc\"}}]}";
+   private static final String SPEC_CATCH_ALL_ASC = "{\"entries\":[{\"sort_by\":{\"field\":\"skapad\",\"direction\":\"asc\"}}]}";
 
    @BeforeAll
    static void setup() throws Exception

@@ -35,7 +35,9 @@ function create_customer_need_flow() {
                         "data": "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}"
                     }
                 ],
-                "handlaggningspecifikationId": "7aa3a1ea-31fd-4049-8a9e-128fe07f4cbe"
+                "handlaggningspecifikationId": "7aa3a1ea-31fd-4049-8a9e-128fe07f4cbe",
+                "avsiktsId": "dae2ffc3-07c8-4686-a3d5-58bc942dfe06",
+                "replyTo": "handlaggning-done"
             }' 2>/dev/null`
 
     if [ $? -ne 0 ]; then
@@ -52,8 +54,8 @@ function assign_case_worker() {
     CASE_WORKER_ID="${2}"
 
     RESPONSE=`curl --fail -X 'POST' \
-        "http://localhost:8889/uppgifter/handlaggare/${ID_TYPE}/${CASE_WORKER_ID}" \
-        -H 'accept: application/json' 2>/dev/null`
+        "http://localhost:8889/uppgifter/handlaggare" \
+        -H 'accept: application/json' -H "authorization: Bearer ${ID_TYPE}:${CASE_WORKER_ID}" 2>/dev/null`
 
     if [ $? -ne 0 ]; then
         echo "❌ Could not assign task to case worker id ${CASE_WORKER_ID}. Received unexpected HTTP response code."

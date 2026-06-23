@@ -15,8 +15,13 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
-import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.*;
+import se.fk.rimfrost.oul.handlaggning.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.oul.management.jaxrsspec.controllers.generatedsource.model.UppgiftPage;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.Idtyp;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.IndividYrkandeRoll;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.ProduceratResultat;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeRequest;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
@@ -157,6 +162,8 @@ abstract class RimfrostTestSupport
       yrkandeRequest.setHandlaggningspecifikationId(UUID.randomUUID());
       yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
       yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
+      yrkandeRequest.setAvsiktsId(UUID.randomUUID().toString());
+      yrkandeRequest.setReplyTo("handlaggning-done");
 
       var request = HttpRequest.newBuilder()
             .uri(URI.create(YRKANDE_URL))
@@ -172,8 +179,9 @@ abstract class RimfrostTestSupport
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
+            .uri(URI.create(OUL_URL))
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
             .build();
@@ -203,7 +211,8 @@ abstract class RimfrostTestSupport
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(OUL_URL + "/" + HANDLAGGARE_ID + "/" + handlaggareId))
+            .uri(URI.create(OUL_URL))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build();
@@ -249,7 +258,9 @@ abstract class RimfrostTestSupport
     * Minimal view of a sorteringsordning response — avoids deserializing the polymorphic Constraint
     * subtypes, which are not Java subtypes of Constraint in the generated JAX-RS spec jar.
     */
-   record SorteringsordningInfo(UUID id, int entryCount) {}
+   record SorteringsordningInfo(UUID id, int entryCount)
+   {
+   }
 
    /**
     * POST /sorteringsordning — creates a new sorteringsordning from raw JSON spec; asserts HTTP 201.

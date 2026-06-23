@@ -48,11 +48,20 @@ kubectl wait --namespace ingress-nginx \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 
+# The admission webhook cert is self-signed and not trusted by the API server in minikube,
+# which causes Helm to fail when creating Ingress resources. Patching failurePolicy to Ignore
+# prevents cert validation failures from blocking installs in this local dev cluster.
+echo "🔑 Patching ingress-nginx admission webhook failurePolicy to Ignore..."
+kubectl patch validatingwebhookconfiguration ingress-nginx-admission \
+  --type='json' \
+  -p='[{"op":"replace","path":"/webhooks/0/failurePolicy","value":"Ignore"}]' \
+  2>/dev/null || true
+
 # Deploy the application using Helm
 echo "📦 Building dependencies..."
 helm dependency build ./helm-chart
 
-helm upgrade --install rimfrost-k8s ./helm-chart --wait
+helm upgrade --install rimfrost-k8s ./helm-chart --wait --timeout 15m
 
 # Get the ingress IP
 echo "🔍 Getting ingress information..."

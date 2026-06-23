@@ -1,6 +1,7 @@
 package fk.rimfrost;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.BufferedReader;
@@ -13,12 +14,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import se.fk.rimfrost.oul.handlaggning.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.oul.management.jaxrsspec.controllers.generatedsource.model.UppgiftPage;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.Idtyp;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.IndividYrkandeRoll;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostHandlaggningProcessRequest;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.ProduceratResultat;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeRequest;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeResponse;
@@ -47,6 +56,8 @@ abstract class RimfrostTestSupport
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
+
+   static final String HANDLAGGNING_DONE_TOPIC = "handlaggning-done";
 
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
@@ -132,6 +143,101 @@ abstract class RimfrostTestSupport
          }
       }
       throw new RuntimeException("httpSendRetries HTTP call failed after " + numberOfRetries + " attempts.");
+   }
+
+   /**
+    * POST /handlaggning/{handlaggningId}/process — restarts the process for an existing handlaggning.
+    * When {@code replyTo} is non-null it replaces the stored reply topic for this handlaggning.
+    *
+    * @return the raw HTTP response so callers can assert on both success (200) and error status codes
+    */
+   static HttpResponse<String> sendRestartProcess(UUID handlaggningId, String replyTo)
+         throws IOException, InterruptedException
+   {
+      var processRequest = new PostHandlaggningProcessRequest();
+      if (replyTo != null)
+      {
+         processRequest.setReplyTo(replyTo);
+      }
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_URL + "/" + handlaggningId + "/process"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(processRequest)))
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.ofString());
+   }
+
+   /**
+    * Creates a Kafka consumer subscribed to {@code topic}, reading from the earliest offset.
+    * The consumer uses a unique group ID so it never shares offset state with other consumers.
+    */
+   static KafkaConsumer<String, String> createKafkaConsumer(String topic)
+   {
+      String bootstrap = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094");
+      Properties props = new Properties();
+      props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+      props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer-" + System.currentTimeMillis());
+      props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+      props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+      props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+      KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+      consumer.subscribe(Collections.singletonList(topic));
+      return consumer;
+   }
+
+   /**
+    * Polls {@code consumer} until a message whose {@code handlaggningId} field matches is found,
+    * then returns that message value. Fails the test after 15 polling attempts (~30 s).
+    */
+   static String awaitKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId)
+   {
+      int maxAttempts = 15;
+      for (int attempt = 0; attempt < maxAttempts; attempt++)
+      {
+         System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
+         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
+         for (ConsumerRecord<String, String> record : records)
+         {
+            String value = record.value();
+            System.out.printf("-- Found kafka message: %s%n", value);
+            if (kafkaMessageHasHandlaggningId(value, handlaggningId))
+            {
+               return value;
+            }
+         }
+      }
+      return fail("No Kafka message with handlaggningId " + handlaggningId + " received after " + maxAttempts + " attempts");
+   }
+
+   /**
+    * POST {baseUrl}{regelUrl}/{handlaggningId}/done — marks a regel step as complete.
+    *
+    * @return the HTTP status code (204 on success)
+    */
+   static int sendRegelDone(String baseUrl, String handlaggningId, String regelUrl)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + regelUrl + "/" + handlaggningId + "/done"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode();
+   }
+
+   private static boolean kafkaMessageHasHandlaggningId(String json, String handlaggningId)
+   {
+      try
+      {
+         JsonNode root = mapper.readTree(json);
+         return handlaggningId.equals(root.path("handlaggningId").asText(null));
+      }
+      catch (Exception e)
+      {
+         return false;
+      }
    }
 
    static PostYrkandeResponse sendYrkandeRequest(String pnr, String erbjudandeId,

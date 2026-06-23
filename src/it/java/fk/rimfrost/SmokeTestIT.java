@@ -1,7 +1,6 @@
 package fk.rimfrost;
 
 import static org.junit.jupiter.api.Assertions.*;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -9,14 +8,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +19,6 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 
 public class SmokeTestIT extends RimfrostTestSupport
 {
-   private static final String handlaggningDoneTopic = "handlaggning-done";
    private static KafkaConsumer<String, String> handlaggningDoneConsumer;
 
    @BeforeAll
@@ -36,60 +28,13 @@ public class SmokeTestIT extends RimfrostTestSupport
       {
          waitForService(url);
       }
-      handlaggningDoneConsumer = createKafkaConsumer(handlaggningDoneTopic);
+      handlaggningDoneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC);
    }
 
    @AfterAll
    static void teardown()
    {
       handlaggningDoneConsumer.close();
-   }
-
-   static KafkaConsumer<String, String> createKafkaConsumer(String topic)
-   {
-      String bootstrap = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094");
-      Properties props = new Properties();
-      props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
-      props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer-" + System.currentTimeMillis());
-      props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-      props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-      props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-      KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-      consumer.subscribe(Collections.singletonList(topic));
-      return consumer;
-   }
-
-   private static boolean hasHandlaggningId(String json, String handlaggningId)
-   {
-      try
-      {
-         JsonNode root = mapper.readTree(json);
-         return handlaggningId.equals(root.path("handlaggningId").asText(null));
-      }
-      catch (Exception e)
-      {
-         return false;
-      }
-   }
-
-   private String getKafkaMessage(KafkaConsumer<String, String> consumer, String handlaggningId)
-   {
-      int maxAttempts = 15;
-      for (int attempt = 0; attempt < maxAttempts; attempt++)
-      {
-         System.out.printf("Polling kafka topic waiting for handlaggningId: %s%n", handlaggningId);
-         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(2));
-         for (ConsumerRecord<String, String> record : records)
-         {
-            String value = record.value();
-            System.out.printf("-- Found kafka message with handlaggningId: %s%n", value);
-            if (hasHandlaggningId(value, handlaggningId))
-            {
-               return value;
-            }
-         }
-      }
-      return fail("No Kafka message with handlaggningId " + handlaggningId + " received after " + maxAttempts + " attempts");
    }
 
    private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl)
@@ -141,6 +86,6 @@ public class SmokeTestIT extends RimfrostTestSupport
       assertEquals(204, sendDoneOperation(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl));
 
       // vah — assert kafka done message
-      getKafkaMessage(handlaggningDoneConsumer, handlaggningId.toString());
+      awaitKafkaMessage(handlaggningDoneConsumer, handlaggningId.toString());
    }
 }

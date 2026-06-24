@@ -4,7 +4,7 @@
 
 `POST /handlaggning/{handlaggningId}/process` was added to `rimfrost-service-workflow` (FKPOC-869).
 The endpoint restarts the erbjudande process for an existing handlaggning without interrupting any
-running process. It optionally updates the stored `replyTo` topic.
+running process. `replyTo` is required and replaces the stored reply topic for the handlaggning.
 
 The integration test infrastructure lives in `rimfrost-kubernetes`:
 - Base class: `src/it/java/fk/rimfrost/RimfrostTestSupport.java`
@@ -21,7 +21,7 @@ Added to `RimfrostTestSupport`:
 
 - `sendRestartProcess(UUID handlaggningId, String replyTo)` — POSTs to
   `HANDLAGGNING_URL/{handlaggningId}/process`; returns raw `HttpResponse<String>`.
-  Sets `replyTo` on the request body only when non-null.
+  Always sets `replyTo` on the request body (`replyTo` is required by the endpoint).
 - `createKafkaConsumer(String topic)` — creates a consumer with a unique group ID and
   `AUTO_OFFSET_RESET=earliest`.
 - `awaitKafkaMessage(KafkaConsumer, String handlaggningId)` — polls up to 15 attempts (~30 s)
@@ -29,7 +29,7 @@ Added to `RimfrostTestSupport`:
 - `sendRegelDone(String baseUrl, String handlaggningId, String regelUrl)` — POSTs
   `{baseUrl}{regelUrl}/{handlaggningId}/done`; returns the HTTP status code.
 
-Also bumped `rimfrost-service-workflow-openapi-jaxrs-spec` from `0.0.1` to `0.1.1` in `pom.xml`
+Also bumped `rimfrost-service-workflow-openapi-jaxrs-spec` from `0.0.1` to `0.1.2` in `pom.xml`
 to get `PostHandlaggningProcessRequest` / `PostHandlaggningProcessResponse`, and updated the OUL
 import to `se.fk.rimfrost.oul.handlaggning.jaxrsspec.*` (spec 2.1.0 package migration).
 
@@ -47,7 +47,7 @@ a Kafka consumer for `handlaggning-done`.
 No prior flow completion required — the endpoint only needs the handlaggning to exist.
 
 1. `sendYrkandeRequest` → capture `handlaggningId`.
-2. `sendRestartProcess(handlaggningId, null)` → assert HTTP 200.
+2. `sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC)` → assert HTTP 200.
 3. Deserialise `PostHandlaggningProcessResponse`; assert `handlaggning.id == handlaggningId`.
 
 **Deviation from original plan:** `erbjudandeId` assertion dropped — the `Handlaggning` model
@@ -62,7 +62,7 @@ guarantees workflow has fully settled.
 
 1. `sendYrkandeRequest` → capture `handlaggningId`.
 2. `driveFlowToCompletion`; `awaitKafkaMessage` on `handlaggning-done` — waits for full settlement.
-3. `sendRestartProcess(handlaggningId, null)`.
+3. `sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC)`.
 4. `sendUppgifterHandlaggare` polls OUL until a task for this `handlaggningId` appears.
 
 #### TC3 — Restarted flow produces handlaggning-done message
@@ -72,7 +72,7 @@ The initial flow is driven to completion first to isolate the restarted flow's d
 1. `sendYrkandeRequest` → capture `handlaggningId`.
 2. `driveFlowToCompletion`; `awaitKafkaMessage` on `handlaggning-done` — drains first run.
 3. Open a new Kafka consumer for `handlaggning-done`.
-4. `sendRestartProcess(handlaggningId, null)`.
+4. `sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC)`.
 5. `driveFlowToCompletion` again.
 6. `awaitKafkaMessage` — confirms the restarted flow produced its done message.
 
@@ -90,7 +90,7 @@ TC1 and TC2. The only unique behaviour of `replyTo` is message routing, so a sin
 
 #### TC5 — Unknown handlaggningId returns 404
 
-1. `sendRestartProcess(UUID.randomUUID(), null)` → assert HTTP 404.
+1. `sendRestartProcess(UUID.randomUUID(), HANDLAGGNING_DONE_TOPIC)` → assert HTTP 404.
 
 ---
 

@@ -147,7 +147,7 @@ abstract class RimfrostTestSupport
 
    /**
     * POST /handlaggning/{handlaggningId}/process — restarts the process for an existing handlaggning.
-    * When {@code replyTo} is non-null it replaces the stored reply topic for this handlaggning.
+    * {@code replyTo} is required by the endpoint and replaces the stored reply topic for this handlaggning.
     *
     * @return the raw HTTP response so callers can assert on both success (200) and error status codes
     */
@@ -155,10 +155,7 @@ abstract class RimfrostTestSupport
          throws IOException, InterruptedException
    {
       var processRequest = new PostHandlaggningProcessRequest();
-      if (replyTo != null)
-      {
-         processRequest.setReplyTo(replyTo);
-      }
+      processRequest.setReplyTo(replyTo);
       var request = HttpRequest.newBuilder()
             .uri(URI.create(HANDLAGGNING_URL + "/" + handlaggningId + "/process"))
             .header("Content-Type", "application/json")

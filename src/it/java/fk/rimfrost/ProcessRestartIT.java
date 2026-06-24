@@ -42,7 +42,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
       var yrkandeResponse = sendYrkandeRequest(INDIVID_PNR, ERBJUDANDE_ID, OffsetDateTime.now(), OffsetDateTime.now());
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
-      var restartResponse = sendRestartProcess(handlaggningId, null);
+      var restartResponse = sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC);
 
       assertEquals(200, restartResponse.statusCode());
       var responseBody = mapper.readValue(restartResponse.body(), PostHandlaggningProcessResponse.class);
@@ -67,7 +67,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
 
-      sendRestartProcess(handlaggningId, null);
+      sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC);
 
       sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
    }
@@ -91,7 +91,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
       try (var doneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC))
       {
-         sendRestartProcess(handlaggningId, null);
+         sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC);
          driveFlowToCompletion(handlaggningId);
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
@@ -128,7 +128,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
    @DisplayName("FKPOC-870-TC5: Restart process with unknown handlaggningId returns 404")
    void restart_process_with_unknown_id_returns_404() throws IOException, InterruptedException
    {
-      var response = sendRestartProcess(UUID.randomUUID(), null);
+      var response = sendRestartProcess(UUID.randomUUID(), HANDLAGGNING_DONE_TOPIC);
       assertEquals(404, response.statusCode());
    }
 

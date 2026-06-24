@@ -154,7 +154,7 @@ quarkus:
   - name: workflow
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-workflow
-      tag: 0.2.0
+      tag: 0.2.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

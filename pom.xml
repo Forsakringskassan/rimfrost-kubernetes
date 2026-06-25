@@ -40,7 +40,7 @@
     <dependency>
       <groupId>se.fk.rimfrost.workflow</groupId>
       <artifactId>rimfrost-service-workflow-openapi-jaxrs-spec</artifactId>
-      <version>0.1.1</version>
+      <version>0.1.2</version>
     </dependency>
     <dependency>
       <groupId>se.fk.rimfrost</groupId>
@@ -55,7 +55,7 @@
     <dependency>
       <groupId>se.fk.rimfrost.oul.management</groupId>
       <artifactId>rimfrost-service-oul-management-api-jaxrs-spec</artifactId>
-      <version>1.3.3</version>
+      <version>1.3.4</version>
     </dependency>
     <dependency>
       <groupId>se.fk.rimfrost.regel.rtf.manuell</groupId>

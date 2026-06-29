@@ -22,7 +22,7 @@ postgresql:
 kafka:
   enabled: true
   name: dev-kafka
-  version: "3.9.1"
+  version: "4.3.0"
   topic: handlaggning-done
 
 

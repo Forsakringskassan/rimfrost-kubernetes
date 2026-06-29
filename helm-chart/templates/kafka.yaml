@@ -1,5 +1,5 @@
 {{- if .Values.kafka.enabled }}
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: {{ .Values.kafka.name }}
@@ -26,12 +26,6 @@ spec:
               advertisedHost: 127.0.0.1
               advertisedPort: 9094
 
-    resources:
-      requests:
-        memory: 1Gi
-      limits:
-        memory: 1Gi
-
     config:
       auto.create.topics.enable: true
       offsets.topic.replication.factor: 1
@@ -43,7 +37,7 @@ spec:
     userOperator: {}
 
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: {{ .Values.kafka.name }}-combined
@@ -59,12 +53,18 @@ spec:
     "-Xms": "512m"
     "-Xmx": "512m"
 
+  resources:
+    requests:
+      memory: 1Gi
+    limits:
+      memory: 1Gi
+
   storage:
     type: ephemeral
 
   {{- if .Values.kafka.topic }}
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
 metadata:
   name: {{ .Values.kafka.topic }}

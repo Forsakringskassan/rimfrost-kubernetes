@@ -50,7 +50,7 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.4.1
+      tag: 1.4.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -113,7 +113,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.2.4
+      tag: 1.2.6
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -132,7 +132,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 1.1.5
+      tag: 1.1.7
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -149,12 +149,12 @@ quarkus:
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
-      tag: 1.3.0
+      tag: 1.3.2
     waitForKafka: false
   - name: workflow
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-workflow
-      tag: 0.2.2
+      tag: 0.2.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

@@ -1,6 +1,11 @@
 name: Smoke Integration Tests
 
-on: [workflow_dispatch, pull_request]
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - 'renovate/**'
 
 jobs:
   integration-tests:

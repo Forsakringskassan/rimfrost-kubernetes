@@ -26,8 +26,8 @@ col_tag  = max(len(e[2]) for e in entries)
 col_name = max(col_name, 4)
 col_tag  = max(col_tag, 11)
 
-header = f"| {'Name':<{col_name}} | {'Current Tag':<{col_tag}} | Available Tags (latest first) |"
-sep    = f"|{'-'*(col_name+2)}|{'-'*(col_tag+2)}|-------------------------------|"
+header = f"| {'Name':<{col_name}} | {'Current Tag':<{col_tag}} | Status           | Available Tags (latest first) |"
+sep    = f"|{'-'*(col_name+2)}|{'-'*(col_tag+2)}|------------------|-------------------------------|"
 print(header)
 print(sep)
 
@@ -54,11 +54,15 @@ for name, repo, current_tag in entries:
         all_tags = [t for t in all_tags if re.match(r'^\d+\.\d+', t)]
         all_tags = sorted(set(all_tags), key=parse_version, reverse=True)
         tags_str = ', '.join(all_tags) if all_tags else '(none)'
+        latest = all_tags[0] if all_tags else None
+        status = 'UPDATE AVAILABLE' if latest and parse_version(latest) > parse_version(current_tag) else 'OK'
     elif result.returncode != 0:
         tags_str = f'error: {result.stderr.strip()[:60]}'
+        status = 'error'
     else:
         tags_str = '(none)'
+        status = 'OK'
 
-    print(f"| {name:<{col_name}} | {current_tag:<{col_tag}} | {tags_str} |")
+    print(f"| {name:<{col_name}} | {current_tag:<{col_tag}} | {status:<16} | {tags_str} |")
 PYEOF
 ```

@@ -101,7 +101,7 @@ quarkus:
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
-      tag: 1.1.2
+      tag: 1.1.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"

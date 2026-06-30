@@ -5,7 +5,7 @@
   <parent>
     <groupId>se.fk.maven</groupId>
     <artifactId>fk-maven-parent</artifactId>
-    <version>1.11.1</version>
+    <version>1.12.0</version>
   </parent>
 
   <groupId>fk.rimfrost</groupId>
@@ -15,9 +15,22 @@
   <name>Rimfrost Smoke Test</name>
 
   <properties>
-    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <junit.jupiter.version>6.1.0</junit.jupiter.version>
     <failsafe.plugin.version>3.2.5</failsafe.plugin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>2.22.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -28,13 +41,12 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.26.0</version>
+      <version>3.27.7</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.17.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -60,12 +72,11 @@
     <dependency>
       <groupId>se.fk.rimfrost.regel.rtf.manuell</groupId>
       <artifactId>rimfrost-regel-rtf-manuell-openapi-jaxrs-spec</artifactId>
-      <version>1.0.1</version>
+      <version>1.1.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.20.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
@@ -89,7 +100,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.6.3</version>
         <executions>
           <execution>
             <id>start-k8s</id>
@@ -123,7 +134,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.6.1</version>
         <executions>
           <execution>
             <id>add-integration-test-source</id>

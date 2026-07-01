@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -56,4 +56,5 @@ jobs:
         run: |
           kubectl get all -A
           kubectl describe pods -A
-          kubectl logs -A --tail=100
+          for name in `kubectl get pods -o name`; do echo -n -e "\n$name:\n" && kubectl logs "$name" --tail=100; done
+        shell: bash

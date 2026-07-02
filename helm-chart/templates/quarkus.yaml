@@ -87,6 +87,10 @@ spec:
           readinessProbe:
 {{ toYaml .readinessProbe | indent 12 }}
           {{ end }}
+          {{ if .startupProbe }}
+          startupProbe:
+{{ toYaml .startupProbe | indent 12 }}
+          {{ end }}
 
           {{- /* Resources (optional per-app) */}}
           {{- if .resources }}

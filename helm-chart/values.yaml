@@ -64,6 +64,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
@@ -81,6 +87,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: vab
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
@@ -98,6 +110,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
@@ -110,6 +128,12 @@ quarkus:
       - name: RIMFROST_FRAMEWORK_REGEL_MASKINELL_RETRY_INTERVALS
         value: 1
     waitForKafka: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
@@ -129,6 +153,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
@@ -146,6 +176,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
@@ -168,6 +204,12 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+    startupProbe:
+      httpGet:
+        path: /q/health
+        port: 8080
+      failureThreshold: 60
+      periodSeconds: 10
 
 ingress:
   enabled: true

@@ -96,9 +96,14 @@ abstract class RimfrostTestSupport
                System.out.println("Service ready: " + healthUrl);
                return;
             }
+            else
+            {
+               System.out.println("Service not ready: " + healthUrl + ": " + response.statusCode());
+            }
          }
          catch (Exception ignored)
          {
+            ignored.printStackTrace();
          }
          if (java.time.Instant.now().isAfter(deadline))
          {

@@ -31,22 +31,22 @@ quarkus:
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
       tag: 1.0.1
-    waitForKafka: false
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
       tag: 1.0.1
-    waitForKafka: false
   - name: referensdata
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
       tag: 1.0.0
-    waitForKafka: false
   - name: erbjudande-topic
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande-topic
       tag: 0.0.1
-    waitForKafka: false
+  - name: sid
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-sid
+      tag: 0.0.1
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager

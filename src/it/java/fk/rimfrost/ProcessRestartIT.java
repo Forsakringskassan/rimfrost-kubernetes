@@ -29,6 +29,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
       {
          waitForService(url);
       }
+      resetOulDatabase();
    }
 
    /**

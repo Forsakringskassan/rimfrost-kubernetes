@@ -22,6 +22,7 @@ public class PersistenceIT extends RimfrostTestSupport
       {
          waitForService(url);
       }
+      resetOulDatabase();
    }
 
    @Test

@@ -35,6 +35,24 @@ echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
 nohup kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094 >> portforward.log 2>&1 &
 echo $! > portforward_kafka.pid
 
+wait_for_health() {
+  local port=$1 timeout=${2:-300} elapsed=0
+  local url="http://localhost:${port}/q/health"
+  echo "Waiting for health: $url"
+  while [ $elapsed -lt $timeout ]; do
+    if curl -sf "$url" > /dev/null 2>&1; then
+      echo "  Ready: $url"
+      return 0
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+  echo "  Timed out after ${timeout}s waiting for $url"
+  return 1
+}
+
+wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891
+
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then
   pod=$(kubectl get pod -n default --no-headers -o custom-columns=":metadata.name" \

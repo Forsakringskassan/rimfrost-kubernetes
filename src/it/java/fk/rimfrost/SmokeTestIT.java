@@ -28,6 +28,7 @@ public class SmokeTestIT extends RimfrostTestSupport
       {
          waitForService(url);
       }
+      resetOulDatabase();
       handlaggningDoneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC);
    }
 

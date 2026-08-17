@@ -487,6 +487,27 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * Truncates the OUL uppgift table (and its dependent tables via CASCADE) so each test class
+    * starts from a known-empty state. Sorteringsordning tables are left untouched.
+    */
+   static void resetOulDatabase() throws IOException, InterruptedException
+   {
+      System.out.println("Resetting OUL database...");
+      var process = new ProcessBuilder(
+            "kubectl", "exec", "rimfrost-k8s-postgresql-0", "--",
+            "/bin/sh", "-c",
+            "PGPASSWORD=rimfrost-test psql -h 127.0.0.1 -U rimfrost-test -d rimfrost-test -c 'TRUNCATE TABLE operativt_uppgiftslager.uppgift CASCADE'")
+            .redirectOutput(ProcessBuilder.Redirect.PIPE)
+            .redirectErrorStream(true)
+            .start();
+      drainSubprocessIO(process.getInputStream());
+      if (process.waitFor() != 0)
+      {
+         fail("Failed to truncate OUL uppgift table");
+      }
+   }
+
+   /**
     * Restarts a kubernetes deployment and blocks until the rollout completes.
     */
    static void restartDeployment(String deploymentName) throws IOException, InterruptedException

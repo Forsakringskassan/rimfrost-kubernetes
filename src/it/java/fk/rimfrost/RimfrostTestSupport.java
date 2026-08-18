@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -501,7 +502,12 @@ abstract class RimfrostTestSupport
             .redirectErrorStream(true)
             .start();
       drainSubprocessIO(process.getInputStream());
-      if (process.waitFor() != 0)
+      if (!process.waitFor(30, TimeUnit.SECONDS))
+      {
+         process.destroyForcibly();
+         fail("Timed out waiting for OUL database reset");
+      }
+      if (process.exitValue() != 0)
       {
          fail("Failed to truncate OUL uppgift table");
       }

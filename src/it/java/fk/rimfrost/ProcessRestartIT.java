@@ -3,7 +3,6 @@ package fk.rimfrost;
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -25,10 +24,10 @@ public class ProcessRestartIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      for (String url : List.of(HANDLAGGNING_BASE_URL, OUL_BASE_URL, RTF_MANUELL_BASE_URL, BEKRAFTABESLUT_BASE_URL))
-      {
-         waitForService(url);
-      }
+      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
       resetOulDatabase();
    }
 

@@ -63,6 +63,11 @@ abstract class RimfrostTestSupport
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
 
+   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
+   static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
+   static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
+   static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
+
    static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
    static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
    static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
@@ -539,6 +544,18 @@ abstract class RimfrostTestSupport
       {
          fail("kubectl rollout status timed out for " + deploymentName);
       }
+   }
+
+   /**
+    * Waits for the service health endpoint to return a non-error response, restarting the port-forward process
+    * whenever it dies. Extracts the local port from {@code baseUrl}.
+    *
+    * @see #waitForServiceRestartingPortForward(String, int, String, int)
+    */
+   static void waitForServiceRestartingPortForward(String serviceName, String baseUrl, int timeoutSeconds)
+         throws IOException, InterruptedException
+   {
+      waitForServiceRestartingPortForward(serviceName, URI.create(baseUrl).getPort(), baseUrl, timeoutSeconds);
    }
 
    /**

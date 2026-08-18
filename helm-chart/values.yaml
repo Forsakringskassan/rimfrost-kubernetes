@@ -30,7 +30,7 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: 1.0.1
+      tag: 1.1.1
     waitForKafka: false
   - name: arbetsgivare
     image:
@@ -40,7 +40,7 @@ quarkus:
   - name: referensdata
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
-      tag: 1.0.0
+      tag: 1.1.1
     waitForKafka: false
   - name: erbjudande-topic
     image:
@@ -50,7 +50,7 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.4.2
+      tag: 1.5.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -67,7 +67,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 1.1.4
+      tag: 1.1.5
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -84,7 +84,7 @@ quarkus:
   - name: vab
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
-      tag: 0.0.2
+      tag: 0.0.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -146,6 +146,11 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+  - name: sid
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-sid
+      tag: 0.1.0
+    waitForKafka: false
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning

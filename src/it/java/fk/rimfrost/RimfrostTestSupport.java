@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -61,6 +62,11 @@ abstract class RimfrostTestSupport
 
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
+
+   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
+   static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
+   static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
+   static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
 
    static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
    static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
@@ -487,6 +493,32 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * Truncates the OUL uppgift table (and its dependent tables via CASCADE) so each test class
+    * starts from a known-empty state. Sorteringsordning tables are left untouched.
+    */
+   static void resetOulDatabase() throws IOException, InterruptedException
+   {
+      System.out.println("Resetting OUL database...");
+      var process = new ProcessBuilder(
+            "kubectl", "exec", "rimfrost-k8s-postgresql-0", "--",
+            "/bin/sh", "-c",
+            "PGPASSWORD=rimfrost-test psql -h 127.0.0.1 -U rimfrost-test -d rimfrost-test -c 'TRUNCATE TABLE operativt_uppgiftslager.uppgift CASCADE'")
+            .redirectOutput(ProcessBuilder.Redirect.PIPE)
+            .redirectErrorStream(true)
+            .start();
+      drainSubprocessIO(process.getInputStream());
+      if (!process.waitFor(30, TimeUnit.SECONDS))
+      {
+         process.destroyForcibly();
+         fail("Timed out waiting for OUL database reset");
+      }
+      if (process.exitValue() != 0)
+      {
+         fail("Failed to truncate OUL uppgift table");
+      }
+   }
+
+   /**
     * Restarts a kubernetes deployment and blocks until the rollout completes.
     */
    static void restartDeployment(String deploymentName) throws IOException, InterruptedException
@@ -512,6 +544,18 @@ abstract class RimfrostTestSupport
       {
          fail("kubectl rollout status timed out for " + deploymentName);
       }
+   }
+
+   /**
+    * Waits for the service health endpoint to return a non-error response, restarting the port-forward process
+    * whenever it dies. Extracts the local port from {@code baseUrl}.
+    *
+    * @see #waitForServiceRestartingPortForward(String, int, String, int)
+    */
+   static void waitForServiceRestartingPortForward(String serviceName, String baseUrl, int timeoutSeconds)
+         throws IOException, InterruptedException
+   {
+      waitForServiceRestartingPortForward(serviceName, URI.create(baseUrl).getPort(), baseUrl, timeoutSeconds);
    }
 
    /**

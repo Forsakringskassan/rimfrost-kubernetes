@@ -1,7 +1,6 @@
 package fk.rimfrost;
 
 import static org.junit.jupiter.api.Assertions.*;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -88,7 +87,6 @@ abstract class RimfrostTestSupport
    static
    {
       mapper.registerModule(new JavaTimeModule());
-      mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
    }
 
    static void waitForService(String baseUrl) throws InterruptedException

@@ -52,6 +52,7 @@ The following ports are forwarded:
 | uppgiftslager | 8889 |
 | rtf-manuell | 8890 |
 | bekraftabeslut | 8891 |
+| sid | 8892 |
 | Kafka | 9094 |
 
 ## Useful Commands

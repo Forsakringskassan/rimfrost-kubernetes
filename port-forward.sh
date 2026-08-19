@@ -30,6 +30,7 @@ forward_service '-uppgiftslager' 8889 oul
 forward_service '-rtf-manuell'   8890 rtf_manuell
 forward_service '-bekraftabeslut' 8891 bekraftabeslut
 forward_service '-sid' 8892 sid
+forward_service '-team' 8893 team
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
@@ -52,7 +53,7 @@ wait_for_health() {
   return 1
 }
 
-wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892
+wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then

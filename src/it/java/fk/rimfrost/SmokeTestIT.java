@@ -27,6 +27,7 @@ public class SmokeTestIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_TEAM, TEAM_BASE_URL, 120);
       resetOulDatabase();
       handlaggningDoneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC);
    }

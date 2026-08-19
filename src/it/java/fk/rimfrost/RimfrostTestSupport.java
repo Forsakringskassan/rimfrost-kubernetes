@@ -52,11 +52,16 @@ abstract class RimfrostTestSupport
    static final String BEKRAFTABESLUT_BASE_URL = System.getenv("BEKRAFTABESLUT_BASE_URL") != null
          ? System.getenv("BEKRAFTABESLUT_BASE_URL")
          : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
+   static final String TEAM_BASE_URL = System.getenv("TEAM_BASE_URL") != null
+         ? System.getenv("TEAM_BASE_URL")
+         : System.getProperty("teamBaseUrl", "http://localhost:8893");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
+   static final String HANDLAGGARE_A_VARDE = "111111111";
+   static final String HANDLAGGARE_C_VARDE = "333333333";
 
    static final String HANDLAGGNING_DONE_TOPIC = "handlaggning-done";
 
@@ -67,10 +72,12 @@ abstract class RimfrostTestSupport
    static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
+   static final String SERVICE_TEAM = "rimfrost-k8s-team";
 
    static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
    static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
    static final String OUL_URL = OUL_BASE_URL + "/uppgifter/handlaggare";
+   static final String OUL_TEAM_URL = OUL_BASE_URL + "/uppgifter/team";
    static final String SORTERINGSORDNING_URL = OUL_BASE_URL + "/sorteringsordning";
    static final String UPPGIFTER_URL = OUL_BASE_URL + "/uppgifter";
 
@@ -327,6 +334,46 @@ abstract class RimfrostTestSupport
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
       return mapper.readValue(response.body(), GetUppgifterHandlaggareResponse.class);
+   }
+
+   /**
+    * Calls {@code GET /uppgifter/team} as the given handläggare and returns the deserialized response.
+    *
+    * @param handlaggareVarde the varde of the calling handläggare
+    * @param responseType the expected response class
+    * @return deserialized response body
+    */
+   static <T> T sendGetUppgifterTeam(String handlaggareVarde, Class<T> responseType)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(OUL_TEAM_URL))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareVarde)
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return mapper.readValue(response.body(), responseType);
+   }
+
+   /**
+    * Calls {@code POST /uppgifter/{uppgiftId}/handlaggare} as the given handläggare, taking
+    * ownership of the specified task.
+    *
+    * @param uppgiftId the ID of the task to take over
+    * @param handlaggareVarde the varde of the handläggare taking over
+    * @return HTTP status code
+    */
+   static int sendTakeoverUppgift(UUID uppgiftId, String handlaggareVarde)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareVarde)
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }
 
    static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl)

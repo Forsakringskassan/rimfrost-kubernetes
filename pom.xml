@@ -72,7 +72,7 @@
     <dependency>
       <groupId>se.fk.rimfrost.regel.rtf.manuell</groupId>
       <artifactId>rimfrost-regel-rtf-manuell-openapi-jaxrs-spec</artifactId>
-      <version>1.1.2</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>

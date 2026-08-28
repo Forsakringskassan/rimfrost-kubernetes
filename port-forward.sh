@@ -17,7 +17,7 @@ forward_service() {
     | grep -- "$pattern" | head -n 1 | tr -d '[:space:]')
   if [ -n "$svc" ]; then
     echo "Starting port-forward: service/$svc $local_port:8080"
-    nohup kubectl port-forward "service/$svc" "$local_port:8080" \
+    nohup bash -c "while true; do kubectl port-forward \"service/$svc\" \"$local_port:8080\"; sleep 2; done" \
       > "portforward_${log_name}.log" 2>&1 &
     echo $! > "portforward_${log_name}.pid"
   else

@@ -35,6 +35,7 @@ import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostY
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
+import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.RtfKompletteringData;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -408,6 +409,65 @@ abstract class RimfrostTestSupport
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
       return response.statusCode();
+   }
+
+   /**
+    * GET /regel/rtf-manuell/{handlaggningId}/komplettering — reads current komplettering data.
+    *
+    * @return the deserialized komplettering data (personnummer and avsikt)
+    */
+   static RtfKompletteringData sendKompletteringGet(UUID handlaggningId)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertEquals(200, response.statusCode(), "GET /komplettering returned unexpected status");
+      return mapper.readValue(response.body(), RtfKompletteringData.class);
+   }
+
+   /**
+    * PATCH /regel/rtf-manuell/{handlaggningId}/komplettering — registers the handläggare's svar.
+    *
+    * @return the HTTP status code (204 on success)
+    */
+   static int sendKompletteringPatch(UUID handlaggningId, String personnummer, String avsikt)
+         throws IOException, InterruptedException
+   {
+      var kompletteringData = new RtfKompletteringData();
+      kompletteringData.setPersonnummer(personnummer);
+      kompletteringData.setAvsikt(avsikt);
+
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(kompletteringData)))
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   /**
+    * POST /regel/rtf-manuell/{handlaggningId}/komplettering/done — closes the komplettering OUL
+    * task and continues regel processing synchronously; the main OUL task is created within this
+    * HTTP call before 204 is returned.
+    *
+    * @return the HTTP status code (204 on success, 207 if OUL close failed, 409 if timed out,
+    *         422 if yrkande still incomplete)
+    */
+   static int sendKompletteringDone(UUID handlaggningId) throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering/done"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }
 
    /**

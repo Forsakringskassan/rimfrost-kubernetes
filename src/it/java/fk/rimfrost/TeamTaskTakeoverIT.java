@@ -71,6 +71,13 @@ public class TeamTaskTakeoverIT extends RimfrostTestSupport
       var yrkandeResponse = sendYrkandeRequest(INDIVID_PNR, ERBJUDANDE_ID, OffsetDateTime.now(), OffsetDateTime.now());
       handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
+      // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
+      sendUppgifterHandlaggare(HANDLAGGARE_A_VARDE, handlaggningId);
+      var kompletteringData = sendKompletteringGet(handlaggningId);
+      assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
+      assertEquals(204, sendKompletteringDone(handlaggningId));
+
+      // Get the regel task — this is the task that will be taken over by handläggare C
       var assignedResponse = sendUppgifterHandlaggare(HANDLAGGARE_A_VARDE, handlaggningId);
       uppgiftId = assignedResponse.getOperativUppgift().getUppgiftId();
       regelUrl = assignedResponse.getOperativUppgift().getUrl();

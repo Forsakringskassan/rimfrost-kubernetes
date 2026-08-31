@@ -36,7 +36,13 @@ public class PersistenceIT extends RimfrostTestSupport
       var yrkandeResponse = sendYrkandeRequest("19900101-9999", "7d4a6c38-348b-4f46-9278-b1bfeabc0353", yrkandeFrom, yrkandeTom);
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
-      // Assign task and patch beslutsutfall to JA
+      // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
+      sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
+      var kompletteringData = sendKompletteringGet(handlaggningId);
+      assertEquals(HTTP_NO_CONTENT, sendKompletteringPatch(handlaggningId, "19900101-9999", kompletteringData.getAvsikt()));
+      assertEquals(HTTP_NO_CONTENT, sendKompletteringDone(handlaggningId));
+
+      // Assign regel task and patch beslutsutfall to JA
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
       var regelUrl = uppgifterResponse.getOperativUppgift().getUrl();
       var ersattningId = sendRegelGetData(String.valueOf(handlaggningId), regelUrl).getErsattningar().getFirst()
@@ -64,7 +70,13 @@ public class PersistenceIT extends RimfrostTestSupport
       var yrkandeResponse = sendYrkandeRequest("19900101-9999", "7d4a6c38-348b-4f46-9278-b1bfeabc0353", yrkandeFrom, yrkandeTom);
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
-      // Assign task
+      // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
+      sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
+      var kompletteringData = sendKompletteringGet(handlaggningId);
+      assertEquals(HTTP_NO_CONTENT, sendKompletteringPatch(handlaggningId, "19900101-9999", kompletteringData.getAvsikt()));
+      assertEquals(HTTP_NO_CONTENT, sendKompletteringDone(handlaggningId));
+
+      // Assign regel task
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
 
       // Restart the uppgiftslager pod and re-establish port-forward

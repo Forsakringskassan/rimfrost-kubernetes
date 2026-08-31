@@ -134,18 +134,30 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
    /**
     * Drives a VAH handlaggning through rtf-manuell and bekraftabeslut to completion.
+    * Handles the komplettering round if the first task is a komplettering task
+    * (always the case on the initial yrkande in rtf-manuell 1.3.1; not triggered on restart
+    * because registerSvar() has already written typId="personnummer").
     */
    private void driveFlowToCompletion(UUID handlaggningId) throws IOException, InterruptedException
    {
-      var uppgifterResponse = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
-      var regelUrl = uppgifterResponse.getOperativUppgift().getUrl();
+      var firstTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
+      var regelTask = firstTask;
+      if (firstTask.getOperativUppgift().getUrl().contains("/komplettering"))
+      {
+         var kompletteringData = sendKompletteringGet(handlaggningId);
+         assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
+         assertEquals(204, sendKompletteringDone(handlaggningId));
+         regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
+      }
+
+      var regelUrl = regelTask.getOperativUppgift().getUrl();
       var regelData = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);
       var ersattningId = regelData.getErsattningar().getFirst().getErsattningId();
       assertEquals(204, sendRegelPatchData(String.valueOf(handlaggningId), regelUrl, Beslutsutfall.JA, ersattningId));
       assertEquals(204, sendRegelDone(RTF_MANUELL_BASE_URL, String.valueOf(handlaggningId), regelUrl));
 
-      uppgifterResponse = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
-      regelUrl = uppgifterResponse.getOperativUppgift().getUrl();
-      assertEquals(204, sendRegelDone(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl));
+      var bekraftaTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
+      var bekraftaUrl = bekraftaTask.getOperativUppgift().getUrl();
+      assertEquals(204, sendRegelDone(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), bekraftaUrl));
    }
 }

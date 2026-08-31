@@ -113,7 +113,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.2.6
+      tag: 1.3.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -127,6 +127,8 @@ quarkus:
         value: "rimfrost-test"
       - name: DB_PASSWORD
         value: "rimfrost-test"
+      - name: SID_API_BASE_URL
+        value: "http://rimfrost-k8s-sid:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut

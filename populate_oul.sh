@@ -88,6 +88,7 @@ fi
 create_customer_need_flow "19900101-9999" "2025-01-10T12:15:50-04:00" "2025-01-10T17:00:00-04:00"
 create_customer_need_flow "19990101-9999" "2025-03-12T10:22:53+02:00" "2025-03-12T16:00:00+02:00"
 create_customer_need_flow "19900101-1234" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
+create_customer_need_flow "19900101-4444" "2025-08-01T08:00:00+01:00" "2025-09-02T17:00:00+01:00"
 
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}

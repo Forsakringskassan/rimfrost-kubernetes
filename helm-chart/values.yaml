@@ -50,7 +50,7 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.5.2
+      tag: 1.6.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -151,7 +151,7 @@ quarkus:
   - name: team
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-team
-      tag: 0.0.3
+      tag: 0.1.0
     waitForKafka: false
   - name: sid
     image:

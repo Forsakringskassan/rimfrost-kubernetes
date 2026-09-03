@@ -54,22 +54,22 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
    }
 
    /**
-    * Verifies that the default_sorteringsordning persists a pod restart.
+    * Verifies that the aktiv_sorteringsordning persists a pod restart.
     */
    @Test
-   @DisplayName("Default sorteringsordning assignment survives OUL pod restart")
-   void default_sorteringsordning_survives_pod_restart() throws Exception
+   @DisplayName("Aktiv sorteringsordning assignment survives OUL pod restart")
+   void aktiv_sorteringsordning_survives_pod_restart() throws Exception
    {
       sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);
       var sorteringsordning = sendCreateSorteringsordning(SPEC_EQ_STATUS);
-      assertEquals(HTTP_NO_CONTENT, sendSetDefaultSorteringsordning(sorteringsordning.id()));
+      assertEquals(HTTP_NO_CONTENT, sendSetAktivSorteringsordning(sorteringsordning.id()));
 
       restartDeployment(DEPLOYMENT_UPPGIFTSLAGER);
       waitForServiceRestartingPortForward(DEPLOYMENT_UPPGIFTSLAGER, 8889, OUL_BASE_URL, 180);
 
-      var defaultSortering = sendGetDefaultSorteringsordning();
-      assertEquals(sorteringsordning.id(), defaultSortering.id(),
-            "default sorteringsordning should be persisted after restart");
+      var aktivSortering = sendGetAktivSorteringsordning();
+      assertEquals(sorteringsordning.id(), aktivSortering.id(),
+            "aktiv sorteringsordning should be persisted after restart");
    }
 
    /**
@@ -87,7 +87,7 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
       sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, yrkandeResponse.getHandlaggning().getId());
 
       var sorteringsordning = sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);
-      assertEquals(HTTP_NO_CONTENT, sendSetDefaultSorteringsordning(sorteringsordning.id()));
+      assertEquals(HTTP_NO_CONTENT, sendSetAktivSorteringsordning(sorteringsordning.id()));
 
       var before = sendGetUppgifterPage(10, 0, null);
       var beforeTotal = before.getTotal();
@@ -113,7 +113,7 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
    {
       var sorteringsordningStatusEq = sendCreateSorteringsordning(SPEC_EQ_STATUS);
       var sorteringsordningCatchAll = sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);
-      assertEquals(HTTP_NO_CONTENT, sendSetDefaultSorteringsordning(sorteringsordningCatchAll.id()));
+      assertEquals(HTTP_NO_CONTENT, sendSetAktivSorteringsordning(sorteringsordningCatchAll.id()));
 
       assertEquals(HTTP_NO_CONTENT, sendDeleteSorteringsordning(sorteringsordningStatusEq.id()));
       assertEquals(HTTP_NOT_FOUND, sendGetSorteringsordningRaw(sorteringsordningStatusEq.id()).statusCode(),
@@ -145,7 +145,7 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
       }
 
       var sortering = sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);
-      assertEquals(HTTP_NO_CONTENT, sendSetDefaultSorteringsordning(sortering.id()));
+      assertEquals(HTTP_NO_CONTENT, sendSetAktivSorteringsordning(sortering.id()));
 
       var page1Before = sendGetUppgifterPage(2, 0, null);
       var page2Before = sendGetUppgifterPage(2, 2, null);

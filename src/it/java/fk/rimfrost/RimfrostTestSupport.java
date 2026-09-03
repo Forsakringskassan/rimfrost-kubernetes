@@ -521,18 +521,18 @@ abstract class RimfrostTestSupport
    }
 
    /**
-    * GET /sorteringsordning/default — fetches the current default sorteringsordning; asserts HTTP 200.
+    * GET /sorteringsordning/aktiv — fetches the current aktiv sorteringsordning; asserts HTTP 200.
     */
-   static SorteringsordningInfo sendGetDefaultSorteringsordning()
+   static SorteringsordningInfo sendGetAktivSorteringsordning()
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(SORTERINGSORDNING_URL + "/default"))
+            .uri(URI.create(SORTERINGSORDNING_URL + "/aktiv"))
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      assertEquals(200, response.statusCode(), "GET /sorteringsordning/default");
+      assertEquals(200, response.statusCode(), "GET /sorteringsordning/aktiv");
       return parseSorteringsordningInfo(response.body());
    }
 
@@ -546,15 +546,15 @@ abstract class RimfrostTestSupport
    }
 
    /**
-    * PUT /sorteringsordning/{id}/default — sets the given sorteringsordning as default.
+    * PUT /sorteringsordning/{id}/aktiv — sets the given sorteringsordning as aktiv.
     *
     * @return the HTTP status code (204 on success, 404 if not found)
     */
-   static int sendSetDefaultSorteringsordning(UUID id)
+   static int sendSetAktivSorteringsordning(UUID id)
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(SORTERINGSORDNING_URL + "/" + id + "/default"))
+            .uri(URI.create(SORTERINGSORDNING_URL + "/" + id + "/aktiv"))
             .timeout(Duration.ofSeconds(10))
             .PUT(HttpRequest.BodyPublishers.noBody())
             .build();
@@ -564,7 +564,7 @@ abstract class RimfrostTestSupport
    /**
     * DELETE /sorteringsordning/{id} — deletes a sorteringsordning.
     *
-    * @return the HTTP status code (204 on success, 404 if not found, 409 if it is the default)
+    * @return the HTTP status code (204 on success, 404 if not found, 409 if it is the aktiv one)
     */
    static int sendDeleteSorteringsordning(UUID id)
          throws IOException, InterruptedException
@@ -579,7 +579,7 @@ abstract class RimfrostTestSupport
 
    /**
     * GET /uppgifter?limit=N&offset=M[&sorteringsordningId=X] — fetches a page of uppgifter.
-    * Pass {@code null} for {@code sorteringsordningId} to use the current default.
+    * Pass {@code null} for {@code sorteringsordningId} to use the current aktiv sorteringsordning.
     */
    static UppgiftPage sendGetUppgifterPage(int limit, int offset, UUID sorteringsordningId)
          throws IOException, InterruptedException

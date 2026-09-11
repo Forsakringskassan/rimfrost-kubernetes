@@ -73,9 +73,15 @@ function assign_case_worker() {
     return 0
 }
 
-# Same request shape as create_customer_need_flow, but prints only the
-# resulting handlaggning_id to stdout (progress/errors go to stderr) so the
-# caller can capture it and drive the rtf-manuell flow below.
+# Same request shape as create_customer_need_flow, but with typId set to the
+# literal string "personnummer" instead of the reference-data UUID. Normally
+# only registerSvar() (the komplettering PATCH handler) ever writes that
+# literal value — sending it directly on the initial yrkande satisfies
+# checkKomplettering() immediately, so the process skips komplettering
+# entirely and creates the plain "/regel/rtf-manuell" task straight away.
+# Idtyp.typId has no format/enum constraint upstream, so this is accepted.
+# Prints only the resulting handlaggning_id to stdout (progress/errors go to
+# stderr) so the caller can capture it and assign the resulting task below.
 function create_yrkande_for_rtf_manuell() {
     INDIVID_ID="$1"
     FROM="$2"
@@ -92,7 +98,7 @@ function create_yrkande_for_rtf_manuell() {
                 "individYrkandeRoller": [
                     {
                         "individ": {
-                            "typId": "c5f2e2b4-9143-4160-8f4b-30c172f0ac05",
+                            "typId": "personnummer",
                             "varde": "'"${INDIVID_ID}"'"
                         },
                         "yrkandeRollId": "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d"
@@ -157,51 +163,6 @@ function assign_specific_task() {
     return 1
 }
 
-# Resolves the komplettering step for a handläggning already routed through
-# rtf-manuell (see create_yrkande_for_rtf_manuell — folkbokford=false, i.e. a
-# personnummer ending "9999", is what triggers the UTREDNING/rtf-manuell path
-# per RtfDecisionModel.dmn), leaving the resulting plain "/regel/rtf-manuell"
-# task assigned to the portal's mock login identity ("Lisa Tass" — card /
-# a1a1a1a1-0000-0000-0000-000000000001) so it shows up immediately in
-# rimfrost-portal-handlaggare without any further manual steps.
-function resolve_rtf_manuell_task() {
-    HANDLAGGNING_ID="$1"
-    INDIVID_ID="$2"
-    REAL_HANDLAGGARE_TYPID="116759e4-18fd-4209-849c-90abbd257d22"
-    REAL_HANDLAGGARE_VARDE="3f439f0d-a915-42cb-ba8f-6a4170c6011f"
-    PORTAL_MOCK_TYPID="card"
-    PORTAL_MOCK_VARDE="a1a1a1a1-0000-0000-0000-000000000001"
-
-    if ! assign_specific_task "${REAL_HANDLAGGARE_TYPID}" "${REAL_HANDLAGGARE_VARDE}" "${HANDLAGGNING_ID}"; then
-        echo "❌ Could not assign komplettering task for handlaggning ${HANDLAGGNING_ID}"
-        return 1
-    fi
-
-    curl --fail -s -X 'PATCH' \
-        "http://localhost:8890/regel/rtf-manuell/${HANDLAGGNING_ID}/komplettering" \
-        -H 'Content-Type: application/json' \
-        -d '{"personnummer":"'"${INDIVID_ID}"'","avsikt":"dae2ffc3-07c8-4686-a3d5-58bc942dfe06"}' > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "❌ Could not register komplettering svar for handlaggning ${HANDLAGGNING_ID}"
-        return 1
-    fi
-
-    curl --fail -s -X 'POST' \
-        "http://localhost:8890/regel/rtf-manuell/${HANDLAGGNING_ID}/komplettering/done" > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "❌ Could not close komplettering for handlaggning ${HANDLAGGNING_ID}"
-        return 1
-    fi
-
-    if ! assign_specific_task "${PORTAL_MOCK_TYPID}" "${PORTAL_MOCK_VARDE}" "${HANDLAGGNING_ID}"; then
-        echo "❌ Could not assign rtf-manuell task for handlaggning ${HANDLAGGNING_ID}"
-        return 1
-    fi
-
-    echo "✅ rtf-manuell task ready for handlaggning ${HANDLAGGNING_ID}, assigned to Lisa Tass"
-    return 0
-}
-
 if ! command -v curl &> /dev/null; then
     echo "❌ curl is not installed. Please install it first:"
     echo "sudo apt-get install curl"
@@ -225,11 +186,18 @@ RTF_MANUELL_HANDLAGGNING_ID=`create_yrkande_for_rtf_manuell "${RTF_MANUELL_INDIV
 echo "⏳ Sleeping ${OUL_ENTRY_CREATION_DELAY} seconds to allow for OUL entry creation"
 sleep ${OUL_ENTRY_CREATION_DELAY}
 
-# Resolved before the generic assign_case_worker call below so its own
+# Assigned before the generic assign_case_worker call below so its own
 # assign-next loop can claim the rtf-manuell task deterministically, before
 # assign_case_worker has a chance to grab it for the wrong identity first.
+# Assigned to the portal's mock login identity ("Lisa Tass" — card /
+# a1a1a1a1-0000-0000-0000-000000000001) so it's immediately visible in
+# rimfrost-portal-handlaggare with no further manual steps.
 if [ -n "${RTF_MANUELL_HANDLAGGNING_ID}" ]; then
-    resolve_rtf_manuell_task "${RTF_MANUELL_HANDLAGGNING_ID}" "${RTF_MANUELL_INDIVID}"
+    if assign_specific_task "card" "a1a1a1a1-0000-0000-0000-000000000001" "${RTF_MANUELL_HANDLAGGNING_ID}"; then
+        echo "✅ rtf-manuell task ready for handlaggning ${RTF_MANUELL_HANDLAGGNING_ID}, assigned to Lisa Tass"
+    else
+        echo "❌ Could not assign rtf-manuell task for handlaggning ${RTF_MANUELL_HANDLAGGNING_ID}"
+    fi
 fi
 
 assign_case_worker "116759e4-18fd-4209-849c-90abbd257d22" "3f439f0d-a915-42cb-ba8f-6a4170c6011f"

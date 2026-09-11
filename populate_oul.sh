@@ -49,13 +49,6 @@ function create_customer_need_flow() {
     return 0
 }
 
-# krav (Lars Persson, Slack, 2026-09-10):
-# "Halvdum fundering, men varför inte bara ha fler poster i
-# create_yrkande_for_rtf_manuell så att komplettering inte triggas till att
-# börja med istället för att trigga komplettering, och sedan lösa det?
-# D.v.s., varför inte bara ha en förfrågan som uppfyller villkoren till att
-# börja med?"
-#
 # Reaching the plain "/regel/rtf-manuell" task previously required triggering
 # komplettering (personnummer missing) and then resolving it via the
 # komplettering PATCH/done endpoints. typId "personnummer" (the literal

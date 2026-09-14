@@ -189,6 +189,10 @@ quarkus:
     env:
       - name: BE_OUL_URL
         value: "http://rimfrost-k8s-uppgiftslager:8080"
+      # application-prod.properties overrides quarkus.http.cors.origins with
+      # ${CORS_ORIGINS} and no default, so the prod profile needs it set explicitly
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030"
     waitForKafka: false
   - name: portal-admin-bff
     image:
@@ -201,6 +205,9 @@ quarkus:
         value: "http://rimfrost-k8s-uppgiftslager:8080"
       - name: BE_OUL_MANAGEMENT_URL
         value: "http://rimfrost-k8s-uppgiftslager:8080"
+      # same application-prod.properties CORS_ORIGINS override as portal-bff
+      - name: CORS_ORIGINS
+        value: "http://localhost:3035"
     waitForKafka: false
   - name: rtf-manuell-bff
     image:
@@ -221,6 +228,9 @@ quarkus:
     env:
       - name: BE_BEKRAFTABESLUT_URL
         value: "http://rimfrost-k8s-bekraftabeslut:8080"
+      # same application-prod.properties CORS_ORIGINS override as portal-bff
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030"
     waitForKafka: false
   - name: template-micro-fe-bff
     image:

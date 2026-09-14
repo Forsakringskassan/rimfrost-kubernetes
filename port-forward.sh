@@ -11,13 +11,13 @@ kubectl wait --for=condition=available deployment \
   --timeout=120s
 
 forward_service() {
-  local pattern=$1 local_port=$2 log_name=$3
+  local pattern=$1 local_port=$2 log_name=$3 remote_port=${4:-8080}
   local svc
   svc=$(kubectl get svc -n default --no-headers -o custom-columns=":metadata.name" \
     | grep -- "$pattern" | head -n 1 | tr -d '[:space:]')
   if [ -n "$svc" ]; then
-    echo "Starting port-forward: service/$svc $local_port:8080"
-    nohup bash -c "while true; do kubectl port-forward \"service/$svc\" \"$local_port:8080\"; sleep 2; done" \
+    echo "Starting port-forward: service/$svc $local_port:$remote_port"
+    nohup bash -c "while true; do kubectl port-forward \"service/$svc\" \"$local_port:$remote_port\"; sleep 2; done" \
       > "portforward_${log_name}.log" 2>&1 &
     echo $! > "portforward_${log_name}.pid"
   else
@@ -25,12 +25,20 @@ forward_service() {
   fi
 }
 
-forward_service '-workflow'  8888 workflow
-forward_service '-uppgiftslager' 8889 oul
-forward_service '-rtf-manuell'   8890 rtf_manuell
-forward_service '-bekraftabeslut' 8891 bekraftabeslut
-forward_service '-sid' 8892 sid
-forward_service '-team' 8893 team
+forward_service '-workflow$'  8888 workflow
+forward_service '-uppgiftslager$' 8889 oul
+forward_service '-rtf-manuell$'   8890 rtf_manuell
+forward_service '-bekraftabeslut$' 8891 bekraftabeslut
+forward_service '-sid$' 8892 sid
+forward_service '-team$' 8893 team
+
+# BFF services — each listens on its own port (not 8080), matching the
+# frontends' VITE_BFF_URL defaults (see each *-fe repo's .env)
+forward_service '-portal-bff$' 9001 portal_bff 9001
+forward_service '-portal-admin-bff$' 9091 portal_admin_bff 9091
+forward_service '-rtf-manuell-bff$' 9002 rtf_manuell_bff 9002
+forward_service '-bekraftabeslut-bff$' 9003 bekraftabeslut_bff 9003
+forward_service '-template-micro-fe-bff$' 9009 template_micro_fe_bff 9009
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
@@ -53,12 +61,13 @@ wait_for_health() {
   return 1
 }
 
-wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893
+wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 \
+  && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9009
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then
   pod=$(kubectl get pod -n default --no-headers -o custom-columns=":metadata.name" \
-    | grep -- '-rtf-manuell' | head -n 1)
+    | grep -- '-rtf-manuell$' | head -n 1)
   if [ -n "$pod" ]; then
     echo "Starting debug port-forward: pod/$pod 5005:5005"
     nohup kubectl port-forward "pod/$pod" 5005:5005 > portforward_rtf_manuell_debug.log 2>&1 &

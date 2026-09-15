@@ -1,5 +1,46 @@
 {{- $defaultResources := .Values.quarkusDefaults.resources }}
 {{- range .Values.apache }}
+{{- if .runtimeConfig }}
+{{- $envVar := printf "__%s_ENV__" (.name | replace "-" "_" | upper) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}-runtime-config
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+data:
+  # Namespaced per app (not window._env_): these apps share one window when
+  # loaded together via Module Federation, so a shared global would let one
+  # app's config leak into — or be clobbered by — another's. Must match the
+  # global name each app's own src/config/env.ts reads.
+  runtime-config.js: |
+    window.{{ $envVar }} = {{ .runtimeConfig | toJson }};
+{{- end }}
+{{- if .cors }}
+---
+# Interim k8s-only workaround: the published FE images ship no CORS headers
+# and no config Include hook, so this reconstructs their (verified, see
+# git history) start-httpd.sh verbatim and adds one Include line for
+# cors.conf below. The real fix belongs in each FE repo's own Apache
+# config (FKPOC-1041 follow-up) — remove this once that ships.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}-cors-config
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+data:
+  cors.conf: |
+    <IfModule headers_module>
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+    </IfModule>
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,6 +72,21 @@ spec:
         - name: {{ .name }}
           image: "{{ .image.repository }}:{{ .image.tag }}"
           imagePullPolicy: {{ default "Always" .image.pullPolicy }}
+          {{- if .cors }}
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              PORT=${HTTPD_PORT:-8080}
+              cp /usr/local/apache2/conf/httpd.conf /tmp/httpd.conf
+              sed -i "s/Listen 80/Listen $PORT/" /tmp/httpd.conf
+              sed -i "s|ErrorLog logs/error_log|ErrorLog /tmp/apache2/logs/error_log|" /tmp/httpd.conf
+              sed -i "s|CustomLog logs/access_log|CustomLog /tmp/apache2/logs/access_log|" /tmp/httpd.conf
+              sed -i "s|#PidFile logs/httpd.pid|PidFile /tmp/apache2/run/httpd.pid|" /tmp/httpd.conf
+              echo "PidFile /tmp/apache2/run/httpd.pid" >> /tmp/httpd.conf
+              echo "ServerName localhost" >> /tmp/httpd.conf
+              echo "Include /usr/local/apache2/conf/cors.conf" >> /tmp/httpd.conf
+              httpd -D FOREGROUND -f /tmp/httpd.conf
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ default 8080 .containerPort }}
@@ -61,6 +117,30 @@ spec:
           {{- if .resources }}
           resources:
 {{ toYaml (default $defaultResources .resources) | indent 12 }}
+          {{- end }}
+          {{- if or .runtimeConfig .cors }}
+          volumeMounts:
+            {{- if .runtimeConfig }}
+            - name: runtime-config
+              mountPath: /usr/local/apache2/htdocs/runtime-config.js
+              subPath: runtime-config.js
+            {{- end }}
+            {{- if .cors }}
+            - name: cors-config
+              mountPath: /usr/local/apache2/conf/cors.conf
+              subPath: cors.conf
+            {{- end }}
+      volumes:
+        {{- if .runtimeConfig }}
+        - name: runtime-config
+          configMap:
+            name: {{ $.Release.Name }}-{{ .name }}-runtime-config
+        {{- end }}
+        {{- if .cors }}
+        - name: cors-config
+          configMap:
+            name: {{ $.Release.Name }}-{{ .name }}-cors-config
+        {{- end }}
           {{- end }}
 
 ---

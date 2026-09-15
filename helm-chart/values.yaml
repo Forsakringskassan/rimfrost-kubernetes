@@ -183,7 +183,7 @@ quarkus:
   - name: portal-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-bff
-      tag: 2.1.0
+      tag: 2.1.1
     containerPort: 9001
     servicePort: 9001
     env:
@@ -197,7 +197,7 @@ quarkus:
   - name: portal-admin-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-admin-bff
-      tag: 0.0.2
+      tag: 0.0.3
     containerPort: 9091
     servicePort: 9091
     env:
@@ -222,7 +222,7 @@ quarkus:
   - name: bekraftabeslut-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-bff
-      tag: 0.0.1
+      tag: 0.0.2
     containerPort: 9003
     servicePort: 9003
     env:
@@ -235,7 +235,7 @@ quarkus:
   - name: template-micro-fe-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe-bff
-      tag: 0.0.1
+      tag: 0.0.2
     containerPort: 9009
     servicePort: 9009
     env:

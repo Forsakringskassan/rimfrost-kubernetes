@@ -1,0 +1,86 @@
+{{- $defaultResources := .Values.quarkusDefaults.resources }}
+{{- range .Values.apache }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: template-chart
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: template-chart
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: {{ .name }}
+      {{- with .podAnnotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: {{ .name }}
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          imagePullPolicy: {{ default "Always" .image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ default 8080 .containerPort }}
+              protocol: TCP
+          {{- if .envFrom }}
+          envFrom:
+{{ toYaml .envFrom | indent 12 }}
+          {{- end }}
+
+          {{- if .env }}
+          env:
+{{- range .env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+{{- end }}
+          {{- end }}
+
+          {{ if .livenessProbe }}
+          livenessProbe:
+{{ toYaml .livenessProbe | indent 12 }}
+          {{ end }}
+          {{ if .readinessProbe }}
+          readinessProbe:
+{{ toYaml .readinessProbe | indent 12 }}
+          {{ end }}
+
+          {{- /* Resources (optional per-app) */}}
+          {{- if .resources }}
+          resources:
+{{ toYaml (default $defaultResources .resources) | indent 12 }}
+          {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ default 8080 .servicePort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+{{- end }}

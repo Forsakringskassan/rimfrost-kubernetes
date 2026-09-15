@@ -243,6 +243,28 @@ quarkus:
         value: "http://rimfrost-k8s-bekraftabeslut:8080/regel/bekraftabeslut"
     waitForKafka: false
 
+apache:
+  - name: portal-handlaggare
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-fe
+      tag: 0.3.0
+  - name: portal-admin-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-portal-admin-fe
+      tag: 0.0.1
+  - name: rtf-manuell-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-fe
+      tag: 0.0.2
+  - name: bekraftabeslut-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-fe
+      tag: 0.0.2
+  - name: template-micro-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe
+      tag: snapshot
+
 ingress:
   enabled: true
   className: "nginx"

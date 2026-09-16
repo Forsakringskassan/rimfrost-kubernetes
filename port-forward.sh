@@ -40,7 +40,6 @@ forward_service '-portal-admin-bff$' 9091 portal_admin_bff 9091
 forward_service '-rtf-manuell-bff$' 9002 rtf_manuell_bff 9002
 forward_service '-bekraftabeslut-bff$' 9003 bekraftabeslut_bff 9003
 forward_service '-template-micro-fe-bff$' 9009 template_micro_fe_bff 9009
->>>>>>> main
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"

@@ -34,6 +34,7 @@ public class KompletteringIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_TEAM, TEAM_BASE_URL, 120);
       resetOulDatabase();
@@ -67,7 +68,7 @@ public class KompletteringIT extends RimfrostTestSupport
       // Komplettering OUL-uppgift skapas; processen parkeras vid eventBasedGateway
       var kompletteringTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_VARDE, handlaggningId);
       var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
-      assertTrue(kompletteringUrl.contains("/komplettering"),
+      assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
             "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);
 
       // Handläggare läser kompletteringsdata — personnummer saknas (readKompletteringData filtrerar
@@ -86,7 +87,7 @@ public class KompletteringIT extends RimfrostTestSupport
 
       var regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_VARDE, handlaggningId);
       var regelUrl = regelTask.getOperativUppgift().getUrl();
-      assertFalse(regelUrl.contains("/komplettering"),
+      assertFalse(regelUrl.contains("/rtf-manuell-komplettering"),
             "Förväntad regeluppgift (ej komplettering) men fick URL: " + regelUrl);
 
       var regelGetDataResponse = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);

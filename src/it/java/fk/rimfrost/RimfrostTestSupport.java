@@ -56,6 +56,9 @@ abstract class RimfrostTestSupport
    static final String TEAM_BASE_URL = System.getenv("TEAM_BASE_URL") != null
          ? System.getenv("TEAM_BASE_URL")
          : System.getProperty("teamBaseUrl", "http://localhost:8893");
+   static final String RTF_MANUELL_KOMPLETTERING_BASE_URL = System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL") != null
+         ? System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL")
+         : System.getProperty("regelRtfManuellKompletteringBaseUrl", "http://localhost:8894");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
@@ -72,6 +75,7 @@ abstract class RimfrostTestSupport
    static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
    static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
+   static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
    static final String SERVICE_TEAM = "rimfrost-k8s-team";
 
@@ -412,7 +416,7 @@ abstract class RimfrostTestSupport
    }
 
    /**
-    * GET /regel/rtf-manuell/{handlaggningId}/komplettering — reads current komplettering data.
+    * GET /regel/rtf-manuell-komplettering/{handlaggningId} — reads current komplettering data.
     *
     * @return the deserialized komplettering data (personnummer and avsikt)
     */
@@ -420,18 +424,18 @@ abstract class RimfrostTestSupport
          throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering"))
+            .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      assertEquals(200, response.statusCode(), "GET /komplettering returned unexpected status");
+      assertEquals(200, response.statusCode(), "GET komplettering returned unexpected status");
       return mapper.readValue(response.body(), RtfKompletteringData.class);
    }
 
    /**
-    * PATCH /regel/rtf-manuell/{handlaggningId}/komplettering — registers the handläggare's svar.
+    * PATCH /regel/rtf-manuell-komplettering/{handlaggningId} — registers the handläggare's svar.
     *
     * @return the HTTP status code (204 on success)
     */
@@ -443,7 +447,7 @@ abstract class RimfrostTestSupport
       kompletteringData.setAvsikt(avsikt);
 
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering"))
+            .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(kompletteringData)))
@@ -452,7 +456,7 @@ abstract class RimfrostTestSupport
    }
 
    /**
-    * POST /regel/rtf-manuell/{handlaggningId}/komplettering/done — closes the komplettering OUL
+    * POST /regel/rtf-manuell-komplettering/{handlaggningId}/done — closes the komplettering OUL
     * task and continues regel processing synchronously; the main OUL task is created within this
     * HTTP call before 204 is returned.
     *
@@ -462,7 +466,7 @@ abstract class RimfrostTestSupport
    static int sendKompletteringDone(UUID handlaggningId) throws IOException, InterruptedException
    {
       var request = HttpRequest.newBuilder()
-            .uri(URI.create(RTF_MANUELL_BASE_URL + "/regel/rtf-manuell/" + handlaggningId + "/komplettering/done"))
+            .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())

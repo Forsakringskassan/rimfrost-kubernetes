@@ -31,6 +31,7 @@ forward_service '-rtf-manuell$'   8890 rtf_manuell
 forward_service '-bekraftabeslut$' 8891 bekraftabeslut
 forward_service '-sid$' 8892 sid
 forward_service '-team$' 8893 team
+forward_service '-rtf-manuell-komplettering$' 8894 rtf_manuell_komplettering
 
 # BFF services — each listens on its own port (not 8080), matching the
 # frontends' VITE_BFF_URL defaults (see each *-fe repo's .env)
@@ -61,7 +62,7 @@ wait_for_health() {
   return 1
 }
 
-wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 \
+wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 && wait_for_health  8894 \
   && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9009
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)

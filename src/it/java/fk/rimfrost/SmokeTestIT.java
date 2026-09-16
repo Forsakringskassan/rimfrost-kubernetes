@@ -26,6 +26,7 @@ public class SmokeTestIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_TEAM, TEAM_BASE_URL, 120);
       resetOulDatabase();
@@ -74,7 +75,7 @@ public class SmokeTestIT extends RimfrostTestSupport
 
       // komplettering (mandatory in 1.3.1 — typId UUID never matches "personnummer")
       var kompletteringTask = sendUppgifterHandlaggare(handlaggareId, handlaggningId);
-      assertTrue(kompletteringTask.getOperativUppgift().getUrl().contains("/komplettering"),
+      assertTrue(kompletteringTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"),
             "Expected komplettering task but got URL: " + kompletteringTask.getOperativUppgift().getUrl());
       var kompletteringData = sendKompletteringGet(handlaggningId);
       assertEquals(204, sendKompletteringPatch(handlaggningId, individPnr, kompletteringData.getAvsikt()));

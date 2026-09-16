@@ -31,6 +31,7 @@ forward_service '-rtf-manuell'   8890 rtf_manuell
 forward_service '-bekraftabeslut' 8891 bekraftabeslut
 forward_service '-sid' 8892 sid
 forward_service '-team' 8893 team
+forward_service '-rtf-manuell-komplettering' 8894 rtf_manuell_komplettering
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"

@@ -148,8 +148,6 @@ quarkus:
         value: "rimfrost-test"
       - name: DB_PASSWORD 
         value: "rimfrost-test"
-      - name: SID_API_BASE_URL
-        value: "http://rimfrost-k8s-sid:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut

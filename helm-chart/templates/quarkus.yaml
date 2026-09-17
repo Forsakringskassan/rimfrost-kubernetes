@@ -1,5 +1,19 @@
 {{- $defaultResources := .Values.quarkusDefaults.resources }}
 {{- range .Values.quarkus }}
+{{- if .remotesConfig }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}-remotes-config
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+data:
+  remotes.json: |
+    {{ .remotesConfig | toJson }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -96,10 +110,20 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: data-volume
+            {{- if .remotesConfig }}
+            - mountPath: /deployments/config/remotes.json
+              name: remotes-config
+              subPath: remotes.json
+            {{- end }}
       volumes:
         - name: data-volume
           emptyDir:
             sizeLimit: 1Gi
+        {{- if .remotesConfig }}
+        - name: remotes-config
+          configMap:
+            name: {{ $.Release.Name }}-{{ .name }}-remotes-config
+        {{- end }}
 
 ---
 apiVersion: v1

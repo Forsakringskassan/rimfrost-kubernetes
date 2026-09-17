@@ -312,21 +312,21 @@ apache:
   - name: rtf-manuell-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-fe
-      tag: 0.0.3
+      tag: 0.0.4
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9002
     cors: true
   - name: bekraftabeslut-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-fe
-      tag: 0.0.3
+      tag: 0.0.4
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9003
     cors: true
   - name: template-micro-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe
-      tag: snapshot
+      tag: 2.0.1
     cors: true
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9009

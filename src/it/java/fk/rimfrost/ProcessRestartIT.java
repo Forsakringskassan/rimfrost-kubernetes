@@ -27,6 +27,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
       resetOulDatabase();
    }
@@ -142,7 +143,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
    {
       var firstTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
       var regelTask = firstTask;
-      if (firstTask.getOperativUppgift().getUrl().contains("/komplettering"))
+      if (firstTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"))
       {
          var kompletteringData = sendKompletteringGet(handlaggningId);
          assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));

@@ -67,7 +67,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 1.1.5
+      tag: 1.1.6
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -129,6 +129,25 @@ quarkus:
         value: "rimfrost-test"
       - name: SID_API_BASE_URL
         value: "http://rimfrost-k8s-sid:8080"
+    waitForKafka: true
+    waitForPostgres: true
+  - name: rtf-manuell-komplettering
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering
+      tag: 0.0.3
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: JAVA_TOOL_OPTIONS
+        value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+      - name: DB_USERNAME
+        value: "rimfrost-test"
+      - name: DB_PASSWORD 
+        value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut

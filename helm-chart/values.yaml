@@ -183,7 +183,7 @@ quarkus:
   - name: portal-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-bff
-      tag: 2.1.1
+      tag: 2.1.2
     containerPort: 9001
     servicePort: 9001
     env:
@@ -244,9 +244,14 @@ quarkus:
         value: "http://rimfrost-k8s-rtf-manuell:8080"
       # base application.properties defaults quarkus.http.cors.origins to
       # localhost:3000/3030 — :8896 is rtf-manuell-fe's port-forward.sh port
-      # (see apache: list below), so it needs to be added explicitly.
+      # (see apache: list below), so it needs to be added explicitly. :8894 is
+      # portal-handlaggare's port-forward.sh port: when rtf-manuell-fe is loaded
+      # as a Module Federation remote inside that shell, the browser's Origin
+      # header on this fetch is the shell's origin, not rtf-manuell-fe's own —
+      # CORS is about the page the browser has open, not where the calling
+      # script was loaded from.
       - name: CORS_ORIGINS
-        value: "http://localhost:3000,http://localhost:3030,http://localhost:8896"
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8896,http://localhost:8894"
     waitForKafka: false
   - name: bekraftabeslut-bff
     image:
@@ -259,8 +264,11 @@ quarkus:
         value: "http://rimfrost-k8s-bekraftabeslut:8080"
       # same application-prod.properties CORS_ORIGINS override as portal-bff.
       # :8897 is bekraftabeslut-fe's port-forward.sh port (see apache: list below).
+      # :8894 (portal-handlaggare) is needed too: when loaded as a Module
+      # Federation remote, the browser's Origin on this fetch is the shell's
+      # origin, not bekraftabeslut-fe's own.
       - name: CORS_ORIGINS
-        value: "http://localhost:3000,http://localhost:3030,http://localhost:8897"
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8897,http://localhost:8894"
     waitForKafka: false
   - name: template-micro-fe-bff
     image:
@@ -273,16 +281,19 @@ quarkus:
         value: "http://rimfrost-k8s-bekraftabeslut:8080/regel/bekraftabeslut"
       # base application.properties defaults quarkus.http.cors.origins to
       # localhost:3000/3030 — :8898 is template-micro-fe's port-forward.sh port
-      # (see apache: list below), so it needs to be added explicitly.
+      # (see apache: list below), so it needs to be added explicitly. :8894
+      # (portal-handlaggare) is needed too: when loaded as a Module Federation
+      # remote, the browser's Origin on this fetch is the shell's origin, not
+      # template-micro-fe's own.
       - name: CORS_ORIGINS
-        value: "http://localhost:3000,http://localhost:3030,http://localhost:8898"
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8898,http://localhost:8894"
     waitForKafka: false
 
 apache:
   - name: portal-handlaggare
     image:
-      repository: ghcr.io/forsakringskassan/rimfrost-fe
-      tag: 0.3.0
+      repository: ghcr.io/forsakringskassan/rimfrost-portal-handlaggare
+      tag: 0.3.1
     # Browser-facing: the FE calls the BFF from the host machine via
     # port-forward.sh's localhost tunnel, same as each app's VITE_BFF_URL default.
     runtimeConfig:
@@ -294,21 +305,21 @@ apache:
   - name: portal-admin-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-admin-fe
-      tag: 0.0.1
+      tag: 0.0.2
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9091
     cors: true
   - name: rtf-manuell-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-fe
-      tag: 0.0.2
+      tag: 0.0.3
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9002
     cors: true
   - name: bekraftabeslut-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-fe
-      tag: 0.0.2
+      tag: 0.0.3
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9003
     cors: true

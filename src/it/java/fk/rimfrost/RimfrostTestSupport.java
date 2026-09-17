@@ -58,7 +58,7 @@ abstract class RimfrostTestSupport
          : System.getProperty("teamBaseUrl", "http://localhost:8893");
    static final String RTF_MANUELL_KOMPLETTERING_BASE_URL = System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL") != null
          ? System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL")
-         : System.getProperty("regelRtfManuellKompletteringBaseUrl", "http://localhost:8894");
+         : System.getProperty("regelRtfManuellKompletteringBaseUrl", "http://localhost:8899");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";

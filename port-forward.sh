@@ -31,7 +31,7 @@ forward_service '-rtf-manuell$'   8890 rtf_manuell
 forward_service '-bekraftabeslut$' 8891 bekraftabeslut
 forward_service '-sid$' 8892 sid
 forward_service '-team$' 8893 team
-forward_service '-rtf-manuell-komplettering$' 8894 rtf_manuell_komplettering
+forward_service '-rtf-manuell-komplettering$' 8899 rtf_manuell_komplettering
 
 # BFF services — each listens on its own port (not 8080), matching the
 # frontends' VITE_BFF_URL defaults (see each *-fe repo's .env)

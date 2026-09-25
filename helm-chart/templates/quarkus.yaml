@@ -14,6 +14,20 @@ data:
   remotes.json: |
     {{ .remotesConfig | toJson }}
 {{- end }}
+{{- if .erbjudandeTopicConfig }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}-config
+  labels:
+    app.kubernetes.io/name: template-chart
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ .name }}
+data:
+  config.yaml: |
+{{ .erbjudandeTopicConfig | toYaml | indent 4 }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -115,6 +129,11 @@ spec:
               name: remotes-config
               subPath: remotes.json
             {{- end }}
+            {{- if .erbjudandeTopicConfig }}
+            - mountPath: /deployments/config.yaml
+              name: erbjudande-topic-config
+              subPath: config.yaml
+            {{ end }}
       volumes:
         - name: data-volume
           emptyDir:
@@ -124,6 +143,11 @@ spec:
           configMap:
             name: {{ $.Release.Name }}-{{ .name }}-remotes-config
         {{- end }}
+        {{- if .erbjudandeTopicConfig }}
+        - name: erbjudande-topic-config
+          configMap:
+            name: {{ $.Release.Name }}-{{ .name }}-config
+        {{ end }}
 
 ---
 apiVersion: v1

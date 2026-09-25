@@ -30,27 +30,37 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: 1.1.1
+      tag: 1.1.2
     waitForKafka: false
   - name: arbetsgivare
     image:
-      repository: ghcr.io/forsakringskassan/arbetsgivare
-      tag: 1.0.1
+      #repository: ghcr.io/forsakringskassan/arbetsgivare
+      #tag: 1.1.1
+      repository: rimfrost/masterdata/arbetsgivare
+      tag: latest
+      pullPolicy: Never
     waitForKafka: false
   - name: referensdata
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
-      tag: 1.1.1
+      tag: 1.1.2
     waitForKafka: false
   - name: erbjudande-topic
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande-topic
-      tag: 0.0.1
+      tag: 0.1.1
+    env:
+      - name: ERBJUDANDE_TOPIC_CONFIG_PATH  
+        value: "/deployments/config.yaml"
+    erbjudandeTopicConfig:
+      erbjudandeTopics:
+        7d4a6c38-348b-4f46-9278-b1bfeabc0353: vah-handlaggning-requests
+        256470a0-671f-433d-80bc-2bf6ba097868: vab-handlaggning-requests
     waitForKafka: false
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.7.0
+      tag: 1.7.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -67,7 +77,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 1.1.6
+      tag: 1.1.7
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -84,7 +94,7 @@ quarkus:
   - name: vab
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
-      tag: 0.0.3
+      tag: 0.0.5
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -101,7 +111,7 @@ quarkus:
   - name: rtf-maskinell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-maskinell
-      tag: 1.1.6
+      tag: 1.1.7
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -113,7 +123,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.3.5
+      tag: 1.3.6
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -134,7 +144,7 @@ quarkus:
   - name: rtf-manuell-komplettering
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering
-      tag: 0.0.6
+      tag: 0.0.7
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -153,7 +163,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 1.1.8
+      tag: 1.1.9
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -175,17 +185,17 @@ quarkus:
   - name: sid
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-sid
-      tag: 0.1.0
+      tag: 0.1.1
     waitForKafka: false
   - name: handlaggning
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-handlaggning
-      tag: 1.3.2
+      tag: 1.3.3
     waitForKafka: false
   - name: workflow
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-workflow
-      tag: 0.2.3
+      tag: 0.2.4
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -202,7 +212,7 @@ quarkus:
   - name: portal-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-bff
-      tag: 2.1.2
+      tag: 2.1.3
     containerPort: 9001
     servicePort: 9001
     env:
@@ -225,6 +235,11 @@ quarkus:
           module: VardAvHusdjur
           devEntry: http://localhost:3031/mf-manifest.json
           prodEntry: http://localhost:8896/mf-manifest.json
+        rtf-manuell-komplettering:
+          scope: remoteKompletteringApp
+          module: RtfKomplettering
+          devEntry: http://localhost:3032/mf-manifest.json
+          prodEntry: http://localhost:8900/mf-manifest.json
         bekraftabeslut:
           scope: bekraftaBeslutApp
           module: BekraftaBeslut
@@ -239,7 +254,7 @@ quarkus:
   - name: portal-admin-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-admin-bff
-      tag: 0.0.3
+      tag: 0.0.4
     containerPort: 9091
     servicePort: 9091
     env:
@@ -255,7 +270,7 @@ quarkus:
   - name: rtf-manuell-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-bff
-      tag: 0.0.1
+      tag: 0.0.2
     containerPort: 9002
     servicePort: 9002
     env:
@@ -271,6 +286,26 @@ quarkus:
       # script was loaded from.
       - name: CORS_ORIGINS
         value: "http://localhost:3000,http://localhost:3030,http://localhost:8896,http://localhost:8894"
+    waitForKafka: false
+  - name: rtf-manuell-komplettering-bff
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering-bff
+      tag: 0.0.2
+    containerPort: 9004
+    servicePort: 9004
+    env:
+      - name: BACKEND_URL
+        value: "http://rimfrost-k8s-rtf-manuell-komplettering:8080/regel/rtf-manuell-komplettering"
+      # base application.properties defaults quarkus.http.cors.origins to
+      # localhost:3000/3030 — :8900 is rtf-manuell-komplettering-fe's port-forward.sh
+      # port (see apache: list below), so it needs to be added explicitly. :8894 is
+      # portal-handlaggare's port-forward.sh port: when rtf-manuell-fe is loaded
+      # as a Module Federation remote inside that shell, the browser's Origin
+      # header on this fetch is the shell's origin, not rtf-manuell-fe's own —
+      # CORS is about the page the browser has open, not where the calling
+      # script was loaded from.
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8900,http://localhost:8894"
     waitForKafka: false
   - name: bekraftabeslut-bff
     image:
@@ -292,7 +327,7 @@ quarkus:
   - name: template-micro-fe-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe-bff
-      tag: 0.0.2
+      tag: 0.1.0
     containerPort: 9009
     servicePort: 9009
     env:
@@ -312,7 +347,7 @@ apache:
   - name: portal-handlaggare
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-handlaggare
-      tag: 0.3.1
+      tag: 0.4.0
     # Browser-facing: the FE calls the BFF from the host machine via
     # port-forward.sh's localhost tunnel, same as each app's VITE_BFF_URL default.
     runtimeConfig:
@@ -334,6 +369,13 @@ apache:
       tag: 0.0.4
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9002
+    cors: true
+  - name: rtf-manuell-komplettering-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering-fe
+      tag: 0.0.1
+    runtimeConfig:
+      RUNTIME_BFF_URL: http://localhost:9004
     cors: true
   - name: bekraftabeslut-fe
     image:

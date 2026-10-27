@@ -77,7 +77,7 @@
     <dependency>
       <groupId>se.fk.rimfrost.regel.rtf.manuell.komplettering</groupId>
       <artifactId>rimfrost-regel-rtf-manuell-komplettering-openapi-jaxrs-spec</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>

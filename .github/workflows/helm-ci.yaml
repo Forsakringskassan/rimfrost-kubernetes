@@ -3,4 +3,4 @@ on: [workflow_dispatch, push, pull_request]
 
 jobs:
   helm-ci:
-    uses: Forsakringskassan/.github/.github/workflows/bundle-helm-ci.yaml@cbd74f159d942a8e96a9acd1dd251601839a7530 # main
+    uses: Forsakringskassan/.github/.github/workflows/bundle-helm-ci.yaml@625efb1a02018d86c0a2ce616074a8c61af97ae9 # main

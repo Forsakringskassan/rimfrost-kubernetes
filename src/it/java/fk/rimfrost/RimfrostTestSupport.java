@@ -59,6 +59,9 @@ abstract class RimfrostTestSupport
    static final String RTF_MANUELL_KOMPLETTERING_BASE_URL = System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL") != null
          ? System.getenv("RTF_MANUELL_KOMPLETTERING_BASE_URL")
          : System.getProperty("regelRtfManuellKompletteringBaseUrl", "http://localhost:8899");
+   static final String RTF_MANUELL_BFF_BASE_URL = System.getenv("RTF_MANUELL_BFF_BASE_URL") != null
+         ? System.getenv("RTF_MANUELL_BFF_BASE_URL")
+         : System.getProperty("regelRtfManuellBffBaseUrl", "http://localhost:9002");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
@@ -68,6 +71,7 @@ abstract class RimfrostTestSupport
    static final String HANDLAGGARE_C_VARDE = "333333333";
 
    static final String HANDLAGGNING_DONE_TOPIC = "handlaggning-done";
+   static final String INFORMATIONSACCESS_TOPIC = "informationsaccess";
 
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
@@ -78,6 +82,8 @@ abstract class RimfrostTestSupport
    static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
    static final String SERVICE_TEAM = "rimfrost-k8s-team";
+   static final String SERVICE_RTF_MANUELL_BFF = "rimfrost-k8s-rtf-manuell-bff";
+   static final int RTF_MANUELL_BFF_SERVICE_PORT = 9002;
 
    static final String YRKANDE_URL = HANDLAGGNING_BASE_URL + "/yrkande";
    static final String HANDLAGGNING_URL = HANDLAGGNING_BASE_URL + "/handlaggning";
@@ -416,6 +422,38 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * GET /api/task/{handlaggningId} on rtf-manuell-bff as the given handläggare.
+    *
+    * @return the raw HTTP response so callers can compare the body with the informationsaccess event
+    */
+   static HttpResponse<String> sendRtfManuellBffGetTask(UUID handlaggningId, String handlaggareVarde)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BFF_BASE_URL + "/api/task/" + handlaggningId))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareVarde)
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.ofString());
+   }
+
+   /**
+    * GET /api/uppgiftsbeskrivning/rtf-manuell on rtf-manuell-bff as the given handläggare.
+    */
+   static HttpResponse<String> sendRtfManuellBffGetUppgiftsbeskrivning(String handlaggareVarde)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(RTF_MANUELL_BFF_BASE_URL + "/api/uppgiftsbeskrivning/rtf-manuell"))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareVarde)
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.ofString());
+   }
+
+   /**
     * GET /regel/rtf-manuell-komplettering/{handlaggningId} — reads current komplettering data.
     *
     * @return the deserialized komplettering data (personnummer and avsikt)
@@ -671,23 +709,36 @@ abstract class RimfrostTestSupport
 
    /**
     * Waits for the service health endpoint to return a non-error response, restarting the port-forward process
-    * whenever it dies. This is necessary because {@code kubectl port-forward} exits when the backend pod is
-    * unreachable — which happens immediately after a pod restart, before the new pod starts listening. Without
-    * active restarts, all health-check attempts would fail with "connection refused" for the full timeout.
+    * whenever it dies. Forwards to service port 8080.
+    *
+    * @see #waitForServiceRestartingPortForward(String, int, int, String, int)
     */
    static void waitForServiceRestartingPortForward(String serviceName, int localPort, String baseUrl,
          int timeoutSeconds) throws IOException, InterruptedException
+   {
+      waitForServiceRestartingPortForward(serviceName, localPort, 8080, baseUrl, timeoutSeconds);
+   }
+
+   /**
+    * Waits for the service health endpoint to return a non-error response, restarting the port-forward process
+    * whenever it dies. This is necessary because {@code kubectl port-forward} exits when the backend pod is
+    * unreachable — which happens immediately after a pod restart, before the new pod starts listening. Without
+    * active restarts, all health-check attempts would fail with "connection refused" for the full timeout.
+    * {@code remotePort} is the service port: 8080 for backends, the BFFs have their own.
+    */
+   static void waitForServiceRestartingPortForward(String serviceName, int localPort, int remotePort,
+         String baseUrl, int timeoutSeconds) throws IOException, InterruptedException
    {
       System.out.println("Waiting for " + baseUrl + " (restarting port-forward as needed)");
       new ProcessBuilder("sh", "-c", "pkill -f 'kubectl port-forward.*" + localPort + "' 2>/dev/null; true")
             .start().waitFor();
       var deadline = java.time.Instant.now().plusSeconds(timeoutSeconds);
-      Process pf = startPortForward(serviceName, localPort);
+      Process pf = startPortForward(serviceName, localPort, remotePort);
       while (true)
       {
          if (!pf.isAlive())
          {
-            pf = startPortForward(serviceName, localPort);
+            pf = startPortForward(serviceName, localPort, remotePort);
             Thread.sleep(500);
          }
          else
@@ -715,9 +766,9 @@ abstract class RimfrostTestSupport
       }
    }
 
-   private static Process startPortForward(String serviceName, int localPort) throws IOException
+   private static Process startPortForward(String serviceName, int localPort, int remotePort) throws IOException
    {
-      return new ProcessBuilder("kubectl", "port-forward", "service/" + serviceName, localPort + ":8080")
+      return new ProcessBuilder("kubectl", "port-forward", "service/" + serviceName, localPort + ":" + remotePort)
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start();

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 
 /**
  * Integration test for the informationsaccess scenario (FKPOC-1102), see RK-FR-01–03 in docs/krav.md.
@@ -90,7 +91,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
 
       var response = sendRtfManuellBffGetTask(handlaggningId, HANDLAGGARE_A_VARDE);
       assertEquals(200, response.statusCode());
-      assertEquals(handlaggningId.toString(), mapper.readTree(response.body()).path("handlaggningId").asText());
+      assertEquals(handlaggningId, mapper.readValue(response.body(), GetDataResponse.class).getHandlaggningId());
    }
 
    /**

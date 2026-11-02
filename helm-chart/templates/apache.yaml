@@ -122,8 +122,7 @@ spec:
           volumeMounts:
             {{- if .runtimeConfig }}
             - name: runtime-config
-              mountPath: /usr/local/apache2/htdocs/runtime-config.js
-              subPath: runtime-config.js
+              mountPath: /usr/local/apache2/htdocs/config
             {{- end }}
             {{- if .cors }}
             - name: cors-config

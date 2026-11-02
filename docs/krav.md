@@ -34,6 +34,9 @@ GET-svaret (FRMM-FR-09), och regelns BFF publicerar eventet.
   varje laddning loggas för sig (IA-FR-01.2, IA-FR-08.1).
 - **RK-FR-02.3** Ett anrop som inte returnerar personuppgifter, t.ex. hämtning av regelns
   uppgiftsbeskrivning, ska inte ge något event inom scenariots väntetid (IA-FR-01.1).
+- **RK-FR-02.4** Ett anrop där SID-kontrollen nekar åtkomst ska ge 403 och inget event inom
+  scenariots väntetid (FRMM-FR-09.4, IA-FR-01.1). Miljöns SID-tjänst svarar att en individ
+  har skyddad identitet när personnumret slutar på `4444`.
 
 ### RK-FR-03 — Eventets innehåll
 
@@ -67,9 +70,3 @@ Kraven gäller det event som ett anrop enligt RK-FR-02.1 ger.
 Scenariot kan bara köras när regelns backend returnerar informationsaccessdata (FKPOC-1103)
 och regelns BFF publicerar eventet (FKPOC-1098), och båda är driftsatta i miljön. Till dess
 är eventdelen av scenariot avstängd.
-
-## Öppna punkter
-
-| Punkt | Berör |
-|---|---|
-| Om scenariot även ska verifiera att inget event publiceras när SID-kontrollen nekar åtkomst (FRMM-FR-09.4, IA-FR-01.1). Kräver att SID-tjänsten i miljön kan svara att en individ har skyddad identitet | RK-FR-02 |

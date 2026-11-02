@@ -43,12 +43,16 @@ public class InformationsaccessIT extends RimfrostTestSupport
    private static final String REGEL_VERSION = "1";
    private static final String KALLA = "rimfrost-regel-rtf-manuell-bff";
 
+   // SID mock: a personnummer ending in 4444 has skyddad identitet
+   private static final String SID_INDIVID_PNR = "19900101-4444";
+
    private static final Duration EVENT_WINDOW = Duration.ofSeconds(10);
    private static final Duration CLOCK_MARGIN = Duration.ofSeconds(30);
 
    private static KafkaConsumer<String, String> informationsaccessConsumer;
    private static UUID handlaggningId;
    private static UUID uppgiftId;
+   private static UUID sidHandlaggningId;
 
    @BeforeAll
    static void setup() throws Exception
@@ -159,6 +163,42 @@ public class InformationsaccessIT extends RimfrostTestSupport
 
       var events = collectEvents(InformationsaccessIT::isEventForUppgift);
       assertEquals(2, distinctIds(events), "Förväntade två event med olika id, fick: " + events);
+   }
+
+   /**
+    * TC5: Handläggare C opens the regel for an individ with skyddad identitet and is denied. The
+    * komplettering GET runs the same SID check, so the round goes straight to PATCH and done.
+    */
+   @Test
+   @Order(5)
+   @DisplayName("RK-FR-02.4: SID-kontrollen nekar åtkomst genom BFF:en")
+   void sid_kontrollen_nekar_atkomst() throws IOException, InterruptedException
+   {
+      sidHandlaggningId = sendYrkandeRequest(SID_INDIVID_PNR, ERBJUDANDE_ID, OffsetDateTime.now(), OffsetDateTime.now())
+            .getHandlaggning().getId();
+
+      sendUppgifterHandlaggare(HANDLAGGARE_C_VARDE, sidHandlaggningId);
+      assertEquals(204, sendKompletteringPatch(sidHandlaggningId, SID_INDIVID_PNR, UUID.randomUUID().toString()));
+      assertEquals(204, sendKompletteringDone(sidHandlaggningId));
+      sendUppgifterHandlaggare(HANDLAGGARE_C_VARDE, sidHandlaggningId);
+
+      assertEquals(403, sendRtfManuellBffGetTask(sidHandlaggningId, HANDLAGGARE_C_VARDE).statusCode());
+   }
+
+   /**
+    * TC6: A call denied by the SID check must not produce an event.
+    */
+   @Test
+   @Order(6)
+   @Disabled(VANTAR_PA_ILOGG)
+   @DisplayName("RK-FR-02.4: Nekad åtkomst ger inget event")
+   void nekad_atkomst_ger_inget_event() throws IOException, InterruptedException
+   {
+      skipToEnd(informationsaccessConsumer);
+      assertEquals(403, sendRtfManuellBffGetTask(sidHandlaggningId, HANDLAGGARE_C_VARDE).statusCode());
+
+      var events = collectEvents(event -> sidHandlaggningId.toString().equals(event.path("handlaggningId").asText(null)));
+      assertTrue(events.isEmpty(), "Inget event förväntades, men fick: " + events);
    }
 
    private static boolean isEventForUppgift(JsonNode event)

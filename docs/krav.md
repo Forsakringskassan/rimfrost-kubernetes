@@ -7,8 +7,6 @@ Hänvisningar till IA-, FRMM- och FBFF-krav avser kraven i
 `rimfrost-service-informationsaccess-asyncapi`, `rimfrost-framework-regel-manuell`
 respektive `rimfrost-framework-bff`.
 
-**Status:** utkast.
-
 ## Funktionella krav
 
 ### RK-FR-01 — Scenario: informationsaccess när en regel öppnas

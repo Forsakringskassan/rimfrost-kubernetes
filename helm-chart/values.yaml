@@ -136,6 +136,8 @@ quarkus:
         value: "rimfrost-test"
       - name: SID_API_BASE_URL
         value: "http://rimfrost-k8s-sid:8080"
+      - name: PERMISSIONS_API_BASE_URL
+        value: "http://rimfrost-k8s-permissions:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: rtf-manuell-komplettering
@@ -153,8 +155,10 @@ quarkus:
         value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
       - name: DB_USERNAME
         value: "rimfrost-test"
-      - name: DB_PASSWORD 
+      - name: DB_PASSWORD
         value: "rimfrost-test"
+      - name: PERMISSIONS_API_BASE_URL
+        value: "http://rimfrost-k8s-permissions:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut
@@ -172,6 +176,8 @@ quarkus:
         value: "rimfrost-test"
       - name: DB_PASSWORD
         value: "rimfrost-test"
+      - name: PERMISSIONS_API_BASE_URL
+        value: "http://rimfrost-k8s-permissions:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: team

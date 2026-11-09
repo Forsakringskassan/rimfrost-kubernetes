@@ -27,9 +27,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import se.fk.rimfrost.oul.handlaggning.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.oul.management.jaxrsspec.controllers.generatedsource.model.UppgiftPage;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.Idtyp;
-import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.IndividYrkandeRoll;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostHandlaggningProcessRequest;
-import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.ProduceratResultat;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostRollIYrkande;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostSakfragaStallningstagande;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeRequest;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
@@ -64,8 +64,8 @@ abstract class RimfrostTestSupport
          : System.getProperty("regelRtfManuellBffBaseUrl", "http://localhost:9002");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
-   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
+   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
    static final String HANDLAGGARE_A_VARDE = "111111111";
    static final String HANDLAGGARE_C_VARDE = "333333333";
@@ -261,34 +261,42 @@ abstract class RimfrostTestSupport
       }
    }
 
-   static PostYrkandeResponse sendYrkandeRequest(String pnr, String erbjudandeId,
+   static PostYrkandeResponse sendYrkandeRequest(String pnr, String ingangtypId,
          OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
    {
       var idTyp = new Idtyp();
       idTyp.setTypId(IDTYP_TYP_ID);
       idTyp.setVarde(pnr);
 
-      var individYrkandeRoll = new IndividYrkandeRoll();
-      individYrkandeRoll.setIndivid(idTyp);
-      individYrkandeRoll.setYrkandeRollId(YRKANDE_ROLL_ID);
+      var rollIYrkande = new PostRollIYrkande();
+      rollIYrkande.setIndivid(idTyp);
+      rollIYrkande.setYrkandeRollId(YRKANDE_ROLL_ID);
 
-      var produceratResultat = new ProduceratResultat();
-      produceratResultat.setId(UUID.randomUUID());
-      produceratResultat.setVersion(1);
-      produceratResultat.setFrom(yrkandeFrom);
-      produceratResultat.setTom(yrkandeTom);
-      produceratResultat.setYrkandestatus(YRKANDESTATUS_ID);
-      produceratResultat.setTyp("ERSATTNING");
-      produceratResultat.setData(
-            "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
+      var sakfraga = new PostSakfragaStallningstagande();
+      sakfraga.setObjektTypId("ERSATTNING");
+      // data is a serialized se.fk.rimfrost.ersattningdata.ErsattningData
+      var ersattningData = mapper.createObjectNode();
+      ersattningData.put("id", UUID.randomUUID().toString());
+      ersattningData.put("version", 1);
+      ersattningData.putObject("ersattningstyp")
+            .put("id", "dee75df2-a6e0-493d-8314-ec4c37b96f9c")
+            .put("namn", "HUNDBIDRAG");
+      ersattningData.put("omfattningProcent", 100);
+      ersattningData.put("belopp", 40000);
+      ersattningData.put("berakningsgrund", 0);
+      ersattningData.put("beslutsutfall", "FU");
+      ersattningData.put("from", yrkandeFrom.toLocalDate().toString());
+      ersattningData.put("tom", yrkandeTom.toLocalDate().toString());
+      ersattningData.put("yrkandeStatus", YRKANDESTATUS_ID);
+      sakfraga.setData(mapper.writeValueAsString(ersattningData));
 
       var yrkandeRequest = new PostYrkandeRequest();
-      yrkandeRequest.setErbjudandeId(erbjudandeId);
+      yrkandeRequest.setIngangtypId(ingangtypId);
       yrkandeRequest.setYrkandeFrom(yrkandeFrom);
       yrkandeRequest.setYrkandeTom(yrkandeTom);
       yrkandeRequest.setHandlaggningspecifikationId(UUID.randomUUID());
-      yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
-      yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
+      yrkandeRequest.setRollerIYrkande(List.of(rollIYrkande));
+      yrkandeRequest.setSakfragorStallningstaganden(List.of(sakfraga));
       yrkandeRequest.setAvsiktsId(UUID.randomUUID().toString());
       yrkandeRequest.setReplyTo("handlaggning-done");
 

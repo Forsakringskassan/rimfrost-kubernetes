@@ -71,7 +71,7 @@ public class SmokeTestIT extends RimfrostTestSupport
             yrkandeResponse.getHandlaggning().getYrkande().getId());
       assertEquals(yrkandeFrom.toInstant(), yrkandeResponse.getHandlaggning().getYrkande().getYrkandeFrom().toInstant());
       assertEquals(yrkandeTom.toInstant(), yrkandeResponse.getHandlaggning().getYrkande().getYrkandeTom().toInstant());
-      assertEquals(erbjudandeId, yrkandeResponse.getHandlaggning().getYrkande().getErbjudandeId());
+      assertEquals(erbjudandeId, yrkandeResponse.getHandlaggning().getYrkande().getIngangtypId());
 
       // komplettering (mandatory in 1.3.1 — typId UUID never matches "personnummer")
       var kompletteringTask = sendUppgifterHandlaggare(handlaggareId, handlaggningId);

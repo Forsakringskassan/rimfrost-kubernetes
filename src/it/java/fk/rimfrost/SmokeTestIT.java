@@ -2,10 +2,6 @@ package fk.rimfrost;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -42,14 +38,7 @@ public class SmokeTestIT extends RimfrostTestSupport
    private static int sendDoneOperation(String baseUrl, String handlaggningId, String regelUrl)
          throws IOException, InterruptedException
    {
-      var request = HttpRequest.newBuilder()
-            .uri(URI.create(baseUrl + regelUrl + "/" + handlaggningId + "/done"))
-            .header("Content-Type", "application/json")
-            .timeout(Duration.ofSeconds(10))
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
-      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return response.statusCode();
+      return sendRegelDone(baseUrl, handlaggningId, regelUrl);
    }
 
    @DisplayName("Smoke test för VAH flöde")

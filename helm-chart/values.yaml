@@ -289,7 +289,7 @@ quarkus:
   - name: rtf-manuell-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-bff
-      tag: 0.1.0
+      tag: 0.2.0
     containerPort: 9002
     servicePort: 9002
     env:

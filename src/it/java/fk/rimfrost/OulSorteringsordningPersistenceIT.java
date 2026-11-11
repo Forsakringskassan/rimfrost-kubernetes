@@ -84,7 +84,7 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
       var yrkandeTom = LocalDate.parse("2025-12-24").atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
 
       var yrkandeResponse = sendYrkandeRequest(TEST_PNR, TEST_ERBJUDANDE_ID, yrkandeFrom, yrkandeTom);
-      sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, yrkandeResponse.getHandlaggning().getId());
+      assignUnassignableUppgift(TEST_HANDLAGGARE_ID, yrkandeResponse.getHandlaggning().getId());
 
       var sorteringsordning = sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);
       assertEquals(HTTP_NO_CONTENT, sendSetAktivSorteringsordning(sorteringsordning.id()));
@@ -141,7 +141,7 @@ public class OulSorteringsordningPersistenceIT extends RimfrostTestSupport
       for (int i = 0; i < 3; i++)
       {
          var yrkandeResponse = sendYrkandeRequest(TEST_PNR, TEST_ERBJUDANDE_ID, yrkandeFrom, yrkandeTom);
-         sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, yrkandeResponse.getHandlaggning().getId());
+         assignUnassignableUppgift(TEST_HANDLAGGARE_ID, yrkandeResponse.getHandlaggning().getId());
       }
 
       var sortering = sendCreateSorteringsordning(SPEC_CATCH_ALL_ASC);

@@ -334,17 +334,19 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * Assigns the unassignable uppgift for the given handläggning to the handläggare.
+    * <p>
     * Komplettering tasks are created with assignable=false, so OUL never hands them out via
-    * POST /uppgifter/handlaggare. Find the task through the individ search and claim it by id.
+    * POST /uppgifter/handlaggare. Polls POST /uppgifter/individ/unassignable for the individ on the
+    * handläggning until the task appears, then claims it with POST /uppgifter/{uppgiftId}/handlaggare.
     */
-   private static PostUppgifterHandlaggareResponse claimUnassignableUppgift(String handlaggareId,
-         UUID handlaggningId) throws IOException
+   static PostUppgifterHandlaggareResponse assignUnassignableUppgift(String handlaggareId, UUID handlaggningId)
+         throws IOException, InterruptedException
    {
       var pnr = INDIVID_BY_HANDLAGGNING.get(handlaggningId);
-      if (pnr == null)
-      {
-         return null;
-      }
+      assertNotNull(pnr, "Inget personnummer registrerat för handlaggningId " + handlaggningId
+            + " (skapades den via sendYrkandeRequest?)");
+
       var searchRequest = new PostUppgifterIndividUnassignableRequest();
       searchRequest.setIdTyp(IDTYP_TYP_ID);
       searchRequest.setIdVarde(pnr);
@@ -356,26 +358,44 @@ abstract class RimfrostTestSupport
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(searchRequest)))
             .build();
-      var searchResponse = httpSendRetries(client, search, HttpResponse.BodyHandlers.ofString(), 200, 5);
-      var uppgift = mapper.readValue(searchResponse.body(), PostUppgifterIndividUnassignableResponse.class)
-            .getOperativaUppgifter().stream()
-            .filter(u -> handlaggningId.equals(u.getHandlaggningId()))
-            .findFirst();
-      if (uppgift.isEmpty())
+
+      UUID uppgiftId = null;
+      int attempt = 0;
+      while (uppgiftId == null && attempt < 120)
       {
-         return null;
+         System.out.printf("assignUnassignableUppgift attempt %d waiting for task with handlaggningId %s%n", attempt,
+               handlaggningId);
+         var searchResponse = httpSendRetries(client, search, HttpResponse.BodyHandlers.ofString(), 200, 5);
+         uppgiftId = mapper.readValue(searchResponse.body(), PostUppgifterIndividUnassignableResponse.class)
+               .getOperativaUppgifter().stream()
+               .filter(u -> handlaggningId.equals(u.getHandlaggningId()))
+               .map(u -> u.getUppgiftId())
+               .findFirst()
+               .orElse(null);
+         attempt++;
+         if (uppgiftId == null)
+         {
+            Thread.sleep(1000);
+         }
       }
+      if (uppgiftId == null)
+      {
+         fail("Ingen otilldelningsbar uppgift med handlaggningId " + handlaggningId + " hittades efter " + attempt
+               + " försök");
+      }
+
       var assign = HttpRequest.newBuilder()
-            .uri(URI.create(UPPGIFTER_URL + "/" + uppgift.get().getUppgiftId() + "/handlaggare"))
+            .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
             .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
             .build();
       var assignResponse = httpSendRetries(client, assign, HttpResponse.BodyHandlers.ofString(), 200, 5);
-      var claimed = new PostUppgifterHandlaggareResponse();
-      claimed.setOperativUppgift(
+      var response = new PostUppgifterHandlaggareResponse();
+      response.setOperativUppgift(
             mapper.readValue(assignResponse.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift());
-      return claimed;
+      ASSIGNED_HANDLAGGARE.put(handlaggningId, handlaggareId);
+      return response;
    }
 
    static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId, UUID expectedHandlaggningId)
@@ -462,11 +482,8 @@ abstract class RimfrostTestSupport
             .POST(HttpRequest.BodyPublishers.noBody())
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      if (response.statusCode() == 200)
-      {
-         var uppgift = mapper.readValue(response.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift();
-         ASSIGNED_HANDLAGGARE.put(uppgift.getHandlaggningId(), handlaggareVarde);
-      }
+      var uppgift = mapper.readValue(response.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift();
+      ASSIGNED_HANDLAGGARE.put(uppgift.getHandlaggningId(), handlaggareVarde);
       return response.statusCode();
    }
 

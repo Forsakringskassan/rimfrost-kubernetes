@@ -66,7 +66,7 @@ public class KompletteringIT extends RimfrostTestSupport
       assertNotNull(handlaggningId);
 
       // Komplettering OUL-uppgift skapas; processen parkeras vid eventBasedGateway
-      var kompletteringTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_VARDE, handlaggningId);
+      var kompletteringTask = assignUnassignableUppgift(HANDLAGGARE_ID_VARDE, handlaggningId);
       var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
       assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
             "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);

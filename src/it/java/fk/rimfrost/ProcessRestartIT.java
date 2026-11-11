@@ -64,7 +64,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
       try (var doneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC))
       {
-         driveFlowToCompletion(handlaggningId);
+         driveFlowToCompletion(handlaggningId, true);
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
 
@@ -86,14 +86,14 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
       try (var doneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC))
       {
-         driveFlowToCompletion(handlaggningId);
+         driveFlowToCompletion(handlaggningId, true);
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
 
       try (var doneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC))
       {
          sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_TOPIC);
-         driveFlowToCompletion(handlaggningId);
+         driveFlowToCompletion(handlaggningId, false);
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
    }
@@ -110,14 +110,14 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
       try (var doneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC))
       {
-         driveFlowToCompletion(handlaggningId);
+         driveFlowToCompletion(handlaggningId, true);
          awaitKafkaMessage(doneConsumer, handlaggningId.toString());
       }
 
       try (var altConsumer = createKafkaConsumer(HANDLAGGNING_DONE_ALT_TOPIC))
       {
          sendRestartProcess(handlaggningId, HANDLAGGNING_DONE_ALT_TOPIC);
-         driveFlowToCompletion(handlaggningId);
+         driveFlowToCompletion(handlaggningId, false);
          awaitKafkaMessage(altConsumer, handlaggningId.toString());
       }
    }
@@ -135,21 +135,22 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
    /**
     * Drives a VAH handlaggning through rtf-manuell and bekraftabeslut to completion.
-    * Handles the komplettering round if the first task is a komplettering task
-    * (always the case on the initial yrkande in rtf-manuell 1.3.1; not triggered on restart
-    * because registerSvar() has already written typId="personnummer").
+    * Komplettering is triggered on the initial yrkande but not on restart, because the
+    * komplettering PATCH has already written typId="personnummer" on the individ.
+    *
+    * @param withKomplettering true to first assign and complete the unassignable komplettering task
     */
-   private void driveFlowToCompletion(UUID handlaggningId) throws IOException, InterruptedException
+   private void driveFlowToCompletion(UUID handlaggningId, boolean withKomplettering)
+         throws IOException, InterruptedException
    {
-      var firstTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
-      var regelTask = firstTask;
-      if (firstTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"))
+      if (withKomplettering)
       {
+         assignUnassignableUppgift(HANDLAGGARE_ID_PARAM, handlaggningId);
          var kompletteringData = sendKompletteringGet(handlaggningId);
          assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
          assertEquals(204, sendKompletteringDone(handlaggningId));
-         regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
       }
+      var regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
 
       var regelUrl = regelTask.getOperativUppgift().getUrl();
       var regelData = sendRegelGetData(String.valueOf(handlaggningId), regelUrl);

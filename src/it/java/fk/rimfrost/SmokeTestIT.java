@@ -63,7 +63,7 @@ public class SmokeTestIT extends RimfrostTestSupport
       assertEquals(erbjudandeId, yrkandeResponse.getHandlaggning().getYrkande().getIngangtypId());
 
       // komplettering (mandatory in 1.3.1 — typId UUID never matches "personnummer")
-      var kompletteringTask = sendUppgifterHandlaggare(handlaggareId, handlaggningId);
+      var kompletteringTask = assignUnassignableUppgift(handlaggareId, handlaggningId);
       assertTrue(kompletteringTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"),
             "Expected komplettering task but got URL: " + kompletteringTask.getOperativUppgift().getUrl());
       var kompletteringData = sendKompletteringGet(handlaggningId);

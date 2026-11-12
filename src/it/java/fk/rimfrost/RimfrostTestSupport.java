@@ -36,7 +36,11 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.GetHandlaggningResponse;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.HandlaggningUpdate;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.SakfragaStallningstagandeContainer;
 import se.fk.rimfrost.regel.rtf.manuell.komplettering.jaxrsspec.controllers.generatedsource.model.RtfKompletteringData;
+import se.fk.rimfrost.service.identitet.prenumeration.test.jaxrsspec.controllers.generatedsource.model.TriggerRequest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 abstract class RimfrostTestSupport
@@ -62,8 +66,16 @@ abstract class RimfrostTestSupport
    static final String RTF_MANUELL_BFF_BASE_URL = System.getenv("RTF_MANUELL_BFF_BASE_URL") != null
          ? System.getenv("RTF_MANUELL_BFF_BASE_URL")
          : System.getProperty("regelRtfManuellBffBaseUrl", "http://localhost:9002");
+   static final String IDENTITET_PRENUMERATION_BASE_URL = System.getenv("IDENTITET_PRENUMERATION_BASE_URL") != null
+         ? System.getenv("IDENTITET_PRENUMERATION_BASE_URL")
+         : System.getProperty("identitetPrenumerationBaseUrl", "http://localhost:8901");
+   static final String HANDLAGGNING_SVC_BASE_URL = System.getenv("HANDLAGGNING_SVC_BASE_URL") != null
+         ? System.getenv("HANDLAGGNING_SVC_BASE_URL")
+         : System.getProperty("handlaggningServiceBaseUrl", "http://localhost:8902");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
+   static final String IDTYP_PERSONNUMMER = "personnummer";
+   static final String FOLKBOKFORING_OBJEKT_TYP_ID = "folkbokforing";
    static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
@@ -77,11 +89,13 @@ abstract class RimfrostTestSupport
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
 
    static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
+   static final String SERVICE_HANDLAGGNING_SVC = "rimfrost-k8s-handlaggning";
    static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
    static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
    static final String SERVICE_TEAM = "rimfrost-k8s-team";
+   static final String SERVICE_IDENTITET_PRENUMERATION = "rimfrost-k8s-identitet-prenumeration";
    static final String SERVICE_RTF_MANUELL_BFF = "rimfrost-k8s-rtf-manuell-bff";
    static final int RTF_MANUELL_BFF_SERVICE_PORT = 9002;
 
@@ -261,11 +275,34 @@ abstract class RimfrostTestSupport
       }
    }
 
+   /**
+    * Sends a POST /yrkande using {@link #IDTYP_TYP_ID} as the individ typId.
+    *
+    * @see #sendYrkandeRequest(String, String, String, OffsetDateTime, OffsetDateTime)
+    */
    static PostYrkandeResponse sendYrkandeRequest(String pnr, String erbjudandeId,
          OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
    {
+      return sendYrkandeRequest(IDTYP_TYP_ID, pnr, erbjudandeId, yrkandeFrom, yrkandeTom);
+   }
+
+   /**
+    * Sends a POST /yrkande with the given {@code typId} as the individ identity type.
+    * Use {@link #IDTYP_PERSONNUMMER} to produce a yrkande recognised by
+    * {@code getPrenumerationsIdentiteter()}, or {@link #IDTYP_TYP_ID} for the UUID-based variant.
+    *
+    * @param typId        the identity type to set on the individ role (e.g. "personnummer")
+    * @param pnr          the identity value (personnummer or other identifier)
+    * @param erbjudandeId the erbjudande to associate the yrkande with
+    * @param yrkandeFrom  period start
+    * @param yrkandeTom   period end
+    * @return the deserialized POST /yrkande response
+    */
+   static PostYrkandeResponse sendYrkandeRequest(String typId, String pnr, String erbjudandeId,
+         OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
+   {
       var idTyp = new Idtyp();
-      idTyp.setTypId(IDTYP_TYP_ID);
+      idTyp.setTypId(typId);
       idTyp.setVarde(pnr);
 
       var individYrkandeRoll = new IndividYrkandeRoll();
@@ -454,6 +491,65 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * GET /handlaggning/{handlaggningId} — reads the full handläggning including its yrkande and
+    * {@code sakfragorStallningstaganden}. Used to inspect current state before and after external
+    * system writes.
+    *
+    * @param handlaggningId the handläggning to fetch
+    * @return the deserialized response (HTTP 200 asserted)
+    */
+   static GetHandlaggningResponse sendGetHandlaggning(UUID handlaggningId)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_SVC_BASE_URL + "/handlaggning/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertEquals(200, response.statusCode(), "GET handlaggning returned unexpected status");
+      return mapper.readValue(response.body(), GetHandlaggningResponse.class);
+   }
+
+   /**
+    * PUT /handlaggning/{handlaggningId} — simulates an external system writing a folkbokföring
+    * entry into the yrkande's {@code sakfragorStallningstaganden}. The existing sakfrågor are
+    * preserved; a new entry with {@code objektTypId = "folkbokforing"} is appended.
+    *
+    * @param handlaggningId the handläggning to update
+    * @param getResponse    the current handläggning state obtained via {@link #sendGetHandlaggning}
+    * @return the HTTP status code (200 on success, 409 on version conflict)
+    */
+   static int sendPutHandlaggningWithFolkbokforing(UUID handlaggningId, GetHandlaggningResponse getResponse)
+         throws IOException, InterruptedException
+   {
+      var handlaggning = getResponse.getHandlaggning();
+      var folkbokforingContainer = new SakfragaStallningstagandeContainer();
+      folkbokforingContainer.setId(UUID.randomUUID());
+      folkbokforingContainer.setObjektTypId(FOLKBOKFORING_OBJEKT_TYP_ID);
+      folkbokforingContainer.setData(
+            "{\"fornamn\":\"Test\",\"efternamn\":\"Testsson\",\"kon\":\"MAN\","
+                  + "\"utdelningsadress\":\"Testgatan 1\",\"postnummer\":\"12345\","
+                  + "\"postort\":\"Teststaden\",\"careOf\":\"\"}");
+
+      var updatedSakfragor = new java.util.ArrayList<>(handlaggning.getYrkande().getSakfragorStallningstaganden());
+      updatedSakfragor.add(folkbokforingContainer);
+      handlaggning.getYrkande().setSakfragorStallningstaganden(updatedSakfragor);
+
+      var handlaggningUpdate = new HandlaggningUpdate();
+      handlaggningUpdate.setHandlaggning(handlaggning);
+
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_SVC_BASE_URL + "/handlaggning/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(handlaggningUpdate)))
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   /**
     * GET /regel/rtf-manuell-komplettering/{handlaggningId} — reads current komplettering data.
     *
     * @return the deserialized komplettering data (personnummer and avsikt)
@@ -508,6 +604,31 @@ abstract class RimfrostTestSupport
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   /**
+    * POST /test/identitet-data-changed — simulates an external identity update that fires
+    * an {@code IdentitetUppdateradEvent} to all prenumerationer matching the given typId/varde.
+    * The komplettering rule service handles this event and auto-resolves the komplettering when
+    * {@code isKompletteringRequired} returns false for the updated handläggning.
+    *
+    * @param idtyp  typId of the updated identity (e.g. IDTYP_TYP_ID)
+    * @param idvarde  varde of the updated identity (e.g. the personnummer)
+    * @return HTTP status code (204 on success)
+    */
+   static int sendTriggerIdentitetDataChanged(String idtyp, String idvarde)
+         throws IOException, InterruptedException
+   {
+      var triggerRequest = new TriggerRequest();
+      triggerRequest.setIdtyp(idtyp);
+      triggerRequest.setIdvarde(idvarde);
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(IDENTITET_PRENUMERATION_BASE_URL + "/test/identitet-data-changed"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(triggerRequest)))
             .build();
       return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }

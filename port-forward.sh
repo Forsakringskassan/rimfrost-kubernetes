@@ -30,8 +30,10 @@ forward_service '-uppgiftslager$' 8889 oul
 forward_service '-rtf-manuell$'   8890 rtf_manuell
 forward_service '-bekraftabeslut$' 8891 bekraftabeslut
 forward_service '-sid$' 8892 sid
+forward_service '-identitet-prenumeration$' 8901 identitet_prenumeration
 forward_service '-team$' 8893 team
 forward_service '-rtf-manuell-komplettering$' 8899 rtf_manuell_komplettering
+forward_service '-handlaggning$' 8902 handlaggning
 
 # BFF services — each listens on its own port (not 8080), matching the
 # frontends' VITE_BFF_URL defaults (see each *-fe repo's .env)
@@ -87,7 +89,7 @@ wait_for_http() {
   return 1
 }
 
-wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 && wait_for_health 8899 \
+wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 && wait_for_health 8899 && wait_for_health 8901 && wait_for_health 8902 \
   && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9004 && wait_for_health 9009 \
   && wait_for_http 8894 && wait_for_http 8895 && wait_for_http 8896 && wait_for_http 8897 && wait_for_http 8898 && wait_for_http 8900
 

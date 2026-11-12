@@ -153,8 +153,10 @@ quarkus:
         value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
       - name: DB_USERNAME
         value: "rimfrost-test"
-      - name: DB_PASSWORD 
+      - name: DB_PASSWORD
         value: "rimfrost-test"
+      - name: IDENTITET_PRENUMERATION_API_BASE_URL
+        value: "http://rimfrost-k8s-identitet-prenumeration:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut
@@ -174,6 +176,11 @@ quarkus:
         value: "rimfrost-test"
     waitForKafka: true
     waitForPostgres: true
+  - name: identitet-prenumeration
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-service-identitet-prenumeration
+      tag: 0.0.2
+    waitForKafka: false
   - name: team
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-team

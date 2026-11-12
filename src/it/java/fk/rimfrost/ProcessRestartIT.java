@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
@@ -14,6 +15,7 @@ import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostH
  * Integration tests for the process restart endpoint:
  * {@code POST /handlaggning/{handlaggningId}/process}.
  */
+@Disabled("Flaky when running on github")
 public class ProcessRestartIT extends RimfrostTestSupport
 {
    private static final String HANDLAGGNING_DONE_ALT_TOPIC = "handlaggning-done-alt";

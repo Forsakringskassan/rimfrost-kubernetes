@@ -398,7 +398,7 @@ apache:
   - name: rtf-manuell-komplettering-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering-fe
-      tag: 0.0.1
+      tag: 0.0.2
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9004
     cors: true

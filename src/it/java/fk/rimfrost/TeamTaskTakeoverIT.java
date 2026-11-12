@@ -73,7 +73,7 @@ public class TeamTaskTakeoverIT extends RimfrostTestSupport
       handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
-      sendUppgifterHandlaggare(HANDLAGGARE_A_VARDE, handlaggningId);
+      assignUnassignableUppgift(HANDLAGGARE_A_VARDE, handlaggningId);
       var kompletteringData = sendKompletteringGet(handlaggningId);
       assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
       assertEquals(204, sendKompletteringDone(handlaggningId));

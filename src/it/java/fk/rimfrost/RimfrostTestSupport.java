@@ -16,8 +16,10 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,9 +29,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import se.fk.rimfrost.oul.handlaggning.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.oul.management.jaxrsspec.controllers.generatedsource.model.UppgiftPage;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.Idtyp;
-import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.IndividYrkandeRoll;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostHandlaggningProcessRequest;
-import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.ProduceratResultat;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostRollIYrkande;
+import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostSakfragaStallningstagande;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeRequest;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostYrkandeResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
@@ -64,8 +66,27 @@ abstract class RimfrostTestSupport
          : System.getProperty("regelRtfManuellBffBaseUrl", "http://localhost:9002");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
-   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
+
+   /** Personnummer per handläggning, used to look up unassignable tasks in OUL. */
+   private static final Map<UUID, String> INDIVID_BY_HANDLAGGNING = new ConcurrentHashMap<>();
+
+   /** Handläggare (varde) currently holding the OUL task per handläggning. */
+   private static final Map<UUID, String> ASSIGNED_HANDLAGGARE = new ConcurrentHashMap<>();
+
+   /**
+    * Regel endpoints resolve the caller through the identity service and require the caller to be
+    * assigned the OUL task, so send the token of the handläggare that currently holds it.
+    */
+   private static HttpRequest.Builder asAssignedHandlaggare(HttpRequest.Builder builder, String handlaggningId)
+   {
+      var handlaggare = ASSIGNED_HANDLAGGARE.get(UUID.fromString(handlaggningId));
+      return handlaggare == null
+            ? builder
+            : builder.header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggare);
+   }
+
+   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
    static final String HANDLAGGARE_A_VARDE = "111111111";
    static final String HANDLAGGARE_C_VARDE = "333333333";
@@ -239,7 +260,7 @@ abstract class RimfrostTestSupport
    static int sendRegelDone(String baseUrl, String handlaggningId, String regelUrl)
          throws IOException, InterruptedException
    {
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId)
             .uri(URI.create(baseUrl + regelUrl + "/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
@@ -261,34 +282,42 @@ abstract class RimfrostTestSupport
       }
    }
 
-   static PostYrkandeResponse sendYrkandeRequest(String pnr, String erbjudandeId,
+   static PostYrkandeResponse sendYrkandeRequest(String pnr, String ingangtypId,
          OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
    {
       var idTyp = new Idtyp();
       idTyp.setTypId(IDTYP_TYP_ID);
       idTyp.setVarde(pnr);
 
-      var individYrkandeRoll = new IndividYrkandeRoll();
-      individYrkandeRoll.setIndivid(idTyp);
-      individYrkandeRoll.setYrkandeRollId(YRKANDE_ROLL_ID);
+      var rollIYrkande = new PostRollIYrkande();
+      rollIYrkande.setIndivid(idTyp);
+      rollIYrkande.setYrkandeRollId(YRKANDE_ROLL_ID);
 
-      var produceratResultat = new ProduceratResultat();
-      produceratResultat.setId(UUID.randomUUID());
-      produceratResultat.setVersion(1);
-      produceratResultat.setFrom(yrkandeFrom);
-      produceratResultat.setTom(yrkandeTom);
-      produceratResultat.setYrkandestatus(YRKANDESTATUS_ID);
-      produceratResultat.setTyp("ERSATTNING");
-      produceratResultat.setData(
-            "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"dee75df2-a6e0-493d-8314-ec4c37b96f9c\",\"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}");
+      var sakfraga = new PostSakfragaStallningstagande();
+      sakfraga.setObjektTypId("ERSATTNING");
+      // data is a serialized se.fk.rimfrost.ersattningdata.ErsattningData
+      var ersattningData = mapper.createObjectNode();
+      ersattningData.put("id", UUID.randomUUID().toString());
+      ersattningData.put("version", 1);
+      ersattningData.putObject("ersattningstyp")
+            .put("id", "dee75df2-a6e0-493d-8314-ec4c37b96f9c")
+            .put("namn", "HUNDBIDRAG");
+      ersattningData.put("omfattningProcent", 100);
+      ersattningData.put("belopp", 40000);
+      ersattningData.put("berakningsgrund", 0);
+      ersattningData.put("beslutsutfall", "FU");
+      ersattningData.put("from", yrkandeFrom.toLocalDate().toString());
+      ersattningData.put("tom", yrkandeTom.toLocalDate().toString());
+      ersattningData.put("yrkandeStatus", YRKANDESTATUS_ID);
+      sakfraga.setData(mapper.writeValueAsString(ersattningData));
 
       var yrkandeRequest = new PostYrkandeRequest();
-      yrkandeRequest.setErbjudandeId(erbjudandeId);
+      yrkandeRequest.setIngangtypId(ingangtypId);
       yrkandeRequest.setYrkandeFrom(yrkandeFrom);
       yrkandeRequest.setYrkandeTom(yrkandeTom);
       yrkandeRequest.setHandlaggningspecifikationId(UUID.randomUUID());
-      yrkandeRequest.setIndividYrkandeRoller(List.of(individYrkandeRoll));
-      yrkandeRequest.setProduceradeResultat(List.of(produceratResultat));
+      yrkandeRequest.setRollerIYrkande(List.of(rollIYrkande));
+      yrkandeRequest.setSakfragorStallningstaganden(List.of(sakfraga));
       yrkandeRequest.setAvsiktsId(UUID.randomUUID().toString());
       yrkandeRequest.setReplyTo("handlaggning-done");
 
@@ -299,7 +328,74 @@ abstract class RimfrostTestSupport
             .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(yrkandeRequest)))
             .build();
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return mapper.readValue(response.body(), PostYrkandeResponse.class);
+      var yrkandeResponse = mapper.readValue(response.body(), PostYrkandeResponse.class);
+      INDIVID_BY_HANDLAGGNING.put(yrkandeResponse.getHandlaggning().getId(), pnr);
+      return yrkandeResponse;
+   }
+
+   /**
+    * Assigns the unassignable uppgift for the given handläggning to the handläggare.
+    * <p>
+    * Komplettering tasks are created with assignable=false, so OUL never hands them out via
+    * POST /uppgifter/handlaggare. Polls POST /uppgifter/individ/unassignable for the individ on the
+    * handläggning until the task appears, then claims it with POST /uppgifter/{uppgiftId}/handlaggare.
+    */
+   static PostUppgifterHandlaggareResponse assignUnassignableUppgift(String handlaggareId, UUID handlaggningId)
+         throws IOException, InterruptedException
+   {
+      var pnr = INDIVID_BY_HANDLAGGNING.get(handlaggningId);
+      assertNotNull(pnr, "Inget personnummer registrerat för handlaggningId " + handlaggningId
+            + " (skapades den via sendYrkandeRequest?)");
+
+      var searchRequest = new PostUppgifterIndividUnassignableRequest();
+      searchRequest.setIdTyp(IDTYP_TYP_ID);
+      searchRequest.setIdVarde(pnr);
+      searchRequest.setStatuses(List.of(PostUppgifterIndividUnassignableRequest.StatusesEnum.NY));
+      var search = HttpRequest.newBuilder()
+            .uri(URI.create(UPPGIFTER_URL + "/individ/unassignable"))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(searchRequest)))
+            .build();
+
+      UUID uppgiftId = null;
+      int attempt = 0;
+      while (uppgiftId == null && attempt < 120)
+      {
+         System.out.printf("assignUnassignableUppgift attempt %d waiting for task with handlaggningId %s%n", attempt,
+               handlaggningId);
+         var searchResponse = httpSendRetries(client, search, HttpResponse.BodyHandlers.ofString(), 200, 5);
+         uppgiftId = mapper.readValue(searchResponse.body(), PostUppgifterIndividUnassignableResponse.class)
+               .getOperativaUppgifter().stream()
+               .filter(u -> handlaggningId.equals(u.getHandlaggningId()))
+               .map(u -> u.getUppgiftId())
+               .findFirst()
+               .orElse(null);
+         attempt++;
+         if (uppgiftId == null)
+         {
+            Thread.sleep(1000);
+         }
+      }
+      if (uppgiftId == null)
+      {
+         fail("Ingen otilldelningsbar uppgift med handlaggningId " + handlaggningId + " hittades efter " + attempt
+               + " försök");
+      }
+
+      var assign = HttpRequest.newBuilder()
+            .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
+            .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      var assignResponse = httpSendRetries(client, assign, HttpResponse.BodyHandlers.ofString(), 200, 5);
+      var response = new PostUppgifterHandlaggareResponse();
+      response.setOperativUppgift(
+            mapper.readValue(assignResponse.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift());
+      ASSIGNED_HANDLAGGARE.put(handlaggningId, handlaggareId);
+      return response;
    }
 
    static PostUppgifterHandlaggareResponse sendUppgifterHandlaggare(String handlaggareId, UUID expectedHandlaggningId)
@@ -331,6 +427,7 @@ abstract class RimfrostTestSupport
       {
          fail("Ingen uppgift med handlaggningId " + expectedHandlaggningId + " hittades efter " + attempt + " försök");
       }
+      ASSIGNED_HANDLAGGARE.put(expectedHandlaggningId, handlaggareId);
       return response;
    }
 
@@ -384,20 +481,25 @@ abstract class RimfrostTestSupport
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
             .build();
-      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      var uppgift = mapper.readValue(response.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift();
+      ASSIGNED_HANDLAGGARE.put(uppgift.getHandlaggningId(), handlaggareVarde);
+      return response.statusCode();
    }
 
    static GetDataResponse sendRegelGetData(String handlaggningId, String regelUrl)
          throws IOException, InterruptedException
    {
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId)
             .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build();
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return mapper.readValue(response.body(), GetDataResponse.class);
+      // Wait for the regel to receive OUL's async assignment notification (see sendKompletteringGet).
+      var response = httpSendRetries(client, request, HttpResponse.BodyHandlers.ofString(), 200, 10);
+      // framework-regel-manuell 1.6.0 wraps the payload: {"data": {...}, "informationsaccess": {...}}
+      return mapper.treeToValue(mapper.readTree(response.body()).path("data"), GetDataResponse.class);
    }
 
    static int sendRegelPatchData(String handlaggningId, String regelUrl, Beslutsutfall beslutsUtfall, UUID ersattningId)
@@ -411,7 +513,7 @@ abstract class RimfrostTestSupport
       var patchRequest = new PatchErsattningRequest();
       patchRequest.setErsattningar(List.of(updateErsattning));
 
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId)
             .uri(URI.create(RTF_MANUELL_BASE_URL + regelUrl + "/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
@@ -461,15 +563,17 @@ abstract class RimfrostTestSupport
    static RtfKompletteringData sendKompletteringGet(UUID handlaggningId)
          throws IOException, InterruptedException
    {
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId.toString())
             .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build();
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      assertEquals(200, response.statusCode(), "GET komplettering returned unexpected status");
-      return mapper.readValue(response.body(), RtfKompletteringData.class);
+      // The regel learns about the assignment from OUL's async status notification, so allow a
+      // few seconds for it to arrive after the task was claimed.
+      var response = httpSendRetries(client, request, HttpResponse.BodyHandlers.ofString(), 200, 10);
+      // framework-regel-komplettering 0.4.0 wraps the payload: {"data": {...}, "informationsaccess": {...}}
+      return mapper.treeToValue(mapper.readTree(response.body()).path("data"), RtfKompletteringData.class);
    }
 
    /**
@@ -484,7 +588,7 @@ abstract class RimfrostTestSupport
       kompletteringData.setPersonnummer(personnummer);
       kompletteringData.setAvsikt(avsikt);
 
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId.toString())
             .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
@@ -503,7 +607,7 @@ abstract class RimfrostTestSupport
     */
    static int sendKompletteringDone(UUID handlaggningId) throws IOException, InterruptedException
    {
-      var request = HttpRequest.newBuilder()
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId.toString())
             .uri(URI.create(RTF_MANUELL_KOMPLETTERING_BASE_URL + "/regel/rtf-manuell-komplettering/" + handlaggningId + "/done"))
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))

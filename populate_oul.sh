@@ -12,10 +12,10 @@ function create_customer_need_flow() {
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
-                "erbjudandeId": "7d4a6c38-348b-4f46-9278-b1bfeabc0353",
+                "ingangtypId": "7d4a6c38-348b-4f46-9278-b1bfeabc0353",
                 "yrkandeFrom": "'"${FROM}"'",
                 "yrkandeTom": "'"${TO}"'",
-                "individYrkandeRoller": [
+                "rollerIYrkande": [
                     {
                         "individ": {
                             "typId": "c5f2e2b4-9143-4160-8f4b-30c172f0ac05",
@@ -24,15 +24,10 @@ function create_customer_need_flow() {
                         "yrkandeRollId": "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d"
                     }
                 ],
-                "produceradeResultat": [
+                "sakfragorStallningstaganden": [
                     {
-                        "id": "e7ed3e20-a13d-4978-8523-0426f7ce4b6c",
-                        "version": 1,
-                        "from": "'"${FROM}"'",
-                        "tom": "'"${TO}"'",
-                        "yrkandestatus": "e27da561-a8db-4513-8272-ef652b097b16",
-                        "typ": "ERSATTNING",
-                        "data": "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}"
+                        "objektTypId": "ERSATTNING",
+                        "data": "{\"id\":\"e7ed3e20-a13d-4978-8523-0426f7ce4b6c\",\"version\":1,\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\",\"from\":\"'"${FROM:0:10}"'\",\"tom\":\"'"${TO:0:10}"'\",\"yrkandeStatus\":\"e27da561-a8db-4513-8272-ef652b097b16\"}"
                     }
                 ],
                 "handlaggningspecifikationId": "7aa3a1ea-31fd-4049-8a9e-128fe07f4cbe",
@@ -68,10 +63,10 @@ function create_yrkande_for_rtf_manuell() {
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
-                "erbjudandeId": "7d4a6c38-348b-4f46-9278-b1bfeabc0353",
+                "ingangtypId": "7d4a6c38-348b-4f46-9278-b1bfeabc0353",
                 "yrkandeFrom": "'"${FROM}"'",
                 "yrkandeTom": "'"${TO}"'",
-                "individYrkandeRoller": [
+                "rollerIYrkande": [
                     {
                         "individ": {
                             "typId": "personnummer",
@@ -80,15 +75,10 @@ function create_yrkande_for_rtf_manuell() {
                         "yrkandeRollId": "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d"
                     }
                 ],
-                "produceradeResultat": [
+                "sakfragorStallningstaganden": [
                     {
-                        "id": "e7ed3e20-a13d-4978-8523-0426f7ce4b6c",
-                        "version": 1,
-                        "from": "'"${FROM}"'",
-                        "tom": "'"${TO}"'",
-                        "yrkandestatus": "e27da561-a8db-4513-8272-ef652b097b16",
-                        "typ": "ERSATTNING",
-                        "data": "{\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\"}"
+                        "objektTypId": "ERSATTNING",
+                        "data": "{\"id\":\"e7ed3e20-a13d-4978-8523-0426f7ce4b6c\",\"version\":1,\"belopp\":40000,\"berakningsgrund\":0,\"ersattningstyp\":{\"id\":\"042bd313-d5ef-4886-97c5-e0a1c828baca\", \"namn\":\"HUNDBIDRAG\"},\"omfattningProcent\":100,\"beslutsutfall\":\"FU\",\"from\":\"'"${FROM:0:10}"'\",\"tom\":\"'"${TO:0:10}"'\",\"yrkandeStatus\":\"e27da561-a8db-4513-8272-ef652b097b16\"}"
                     }
                 ],
                 "handlaggningspecifikationId": "7aa3a1ea-31fd-4049-8a9e-128fe07f4cbe",

@@ -15,6 +15,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -26,15 +27,16 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
  * Integration test for the informationsaccess scenario (FKPOC-1102), see RK-FR-01–03 in docs/krav.md.
  *
  * <p>Handläggare A opens the rtf-manuell regel through rtf-manuell-bff, which is expected to publish an
- * {@code InformationsaccessEvent} on the {@code informationsaccess} topic. Requires rtf-manuell with
- * informationsaccess data in the GET response (FKPOC-1103) and an rtf-manuell-bff that publishes the
- * event (FKPOC-1098).
+ * {@code InformationsaccessEvent} on the {@code informationsaccess} topic. The event tests are disabled
+ * until the BFF publishes events (FKPOC-1098), the backend returns informationsaccess data (FKPOC-1103)
+ * and both are deployed here.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InformationsaccessIT extends RimfrostTestSupport
 {
    private static final String INDIVID_PNR = "19900101-9999";
    private static final String ERBJUDANDE_ID = "7d4a6c38-348b-4f46-9278-b1bfeabc0353";
+   private static final String VANTAR_PA_ILOGG = "Väntar på FKPOC-1098, FKPOC-1103 och FK-bygget";
 
    // regel block in rimfrost-regel-rtf-manuell's config.yaml
    private static final String REGEL_ID = "a11f3429-3a6b-4389-ba1c-c2747b0fb45b";
@@ -80,10 +82,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
       handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
-      assignUnassignableUppgift(HANDLAGGARE_A_VARDE, handlaggningId);
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
-      assertEquals(204, sendKompletteringDone(handlaggningId));
+      completeMandatoryKomplettering(HANDLAGGARE_A_VARDE, handlaggningId, INDIVID_PNR);
 
       uppgiftId = sendUppgifterHandlaggare(HANDLAGGARE_A_VARDE, handlaggningId).getOperativUppgift().getUppgiftId();
 
@@ -98,6 +97,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
     */
    @Test
    @Order(2)
+   @Disabled(VANTAR_PA_ILOGG)
    @DisplayName("RK-FR-02.3: Hämtning av uppgiftsbeskrivning ger inget event")
    void uppgiftsbeskrivning_ger_inget_event() throws IOException, InterruptedException
    {
@@ -113,6 +113,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
     */
    @Test
    @Order(3)
+   @Disabled(VANTAR_PA_ILOGG)
    @DisplayName("RK-FR-02.1, RK-FR-03: Ett anrop ger ett event med förväntat innehåll")
    void ett_anrop_ger_ett_event_med_forvantat_innehall() throws IOException, InterruptedException
    {
@@ -145,6 +146,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
     */
    @Test
    @Order(4)
+   @Disabled(VANTAR_PA_ILOGG)
    @DisplayName("RK-FR-02.2: Två anrop ger två event med olika id")
    void tva_anrop_ger_tva_event() throws IOException, InterruptedException
    {

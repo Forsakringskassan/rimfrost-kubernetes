@@ -81,7 +81,7 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
       - name: DB_URL
-        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test?currentSchema=vah"
       - name: DB_USERNAME
         value: "rimfrost-test"
       - name: DB_PASSWORD
@@ -98,7 +98,7 @@ quarkus:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
         value: "true"
       - name: DB_URL
-        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test?currentSchema=vab"
       - name: DB_USERNAME
         value: "rimfrost-test"
       - name: DB_PASSWORD

@@ -145,7 +145,7 @@ quarkus:
   - name: rtf-manuell-komplettering
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering
-      tag: 0.1.1
+      tag: 0.1.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -163,6 +163,8 @@ quarkus:
         value: "http://rimfrost-k8s-permissions:8080"
       - name: QUARKUS_REST_CLIENT_IDENTITY_API_URL
         value: "http://rimfrost-k8s-identity:8080"
+      - name: IDENTITET_PRENUMERATION_API_BASE_URL
+        value: "http://rimfrost-k8s-identitet-prenumeration:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut
@@ -186,6 +188,16 @@ quarkus:
         value: "http://rimfrost-k8s-identity:8080"
     waitForKafka: true
     waitForPostgres: true
+  - name: identitet-prenumeration
+    image:
+      repository: ghcr.io/forsakringskassan/identitet-prenumeration
+      tag: 0.0.3
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
   - name: team
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-team

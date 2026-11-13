@@ -19,7 +19,7 @@ public class SmokeTestIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_WORKFLOW, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
@@ -63,12 +63,9 @@ public class SmokeTestIT extends RimfrostTestSupport
       assertEquals(erbjudandeId, yrkandeResponse.getHandlaggning().getYrkande().getIngangtypId());
 
       // komplettering (mandatory in 1.3.1 — typId UUID never matches "personnummer")
-      var kompletteringTask = assignUnassignableUppgift(handlaggareId, handlaggningId);
+      var kompletteringTask = completeMandatoryKomplettering(handlaggareId, handlaggningId, individPnr);
       assertTrue(kompletteringTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"),
             "Expected komplettering task but got URL: " + kompletteringTask.getOperativUppgift().getUrl());
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(204, sendKompletteringPatch(handlaggningId, individPnr, kompletteringData.getAvsikt()));
-      assertEquals(204, sendKompletteringDone(handlaggningId));
 
       // rtf-manuell
       var uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId, handlaggningId);

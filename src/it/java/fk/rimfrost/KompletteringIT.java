@@ -31,7 +31,7 @@ public class KompletteringIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_WORKFLOW, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
@@ -65,25 +65,12 @@ public class KompletteringIT extends RimfrostTestSupport
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
       assertNotNull(handlaggningId);
 
-      // Komplettering OUL-uppgift skapas; processen parkeras vid eventBasedGateway
-      var kompletteringTask = assignUnassignableUppgift(HANDLAGGARE_ID_VARDE, handlaggningId);
-      var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
-      assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
-            "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);
-
-      // Handläggare läser kompletteringsdata — personnummer saknas (readKompletteringData filtrerar
-      // på typId="personnummer" men inkommande typId är UUID), avsikt är satt från yrkandet
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertNull(kompletteringData.getPersonnummer(), "Personnummer ska vara null i kompletteringsdata innan komplettering");
-      assertNotNull(kompletteringData.getAvsikt(), "Avsikt ska vara satt (skickat i yrkandet)");
-
-      // Handläggare registrerar svar — personnummer sätts, avsikt ekas tillbaka
-      assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
-
-      // Handläggare markerar komplettering som klar — stänger komplettering-OUL-uppgift och
-      // anropar handleRegelRequest() direkt (synkront); checkKomplettering() returnerar nu tom
-      // lista (avsikt och personnummer finns) → huvud-OUL-uppgift skapas inom samma anrop.
-      assertEquals(204, sendKompletteringDone(handlaggningId));
+      // Komplettering OUL-uppgift skapas; processen parkeras vid eventBasedGateway.
+      // Personnummer saknas initialt (typId=UUID matchar ej "personnummer") — komplettering
+      // krävs. Markerar komplettering klar efter att personnummer och folkbokföring är satta.
+      var kompletteringTask = completeMandatoryKomplettering(HANDLAGGARE_ID_VARDE, handlaggningId, INDIVID_PNR);
+      assertTrue(kompletteringTask.getOperativUppgift().getUrl().contains("/rtf-manuell-komplettering"),
+            "Förväntad kompletteringsuppgift men fick URL: " + kompletteringTask.getOperativUppgift().getUrl());
 
       var regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_VARDE, handlaggningId);
       var regelUrl = regelTask.getOperativUppgift().getUrl();

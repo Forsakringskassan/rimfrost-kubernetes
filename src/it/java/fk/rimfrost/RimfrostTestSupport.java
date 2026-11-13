@@ -109,8 +109,8 @@ abstract class RimfrostTestSupport
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
 
-   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
-   static final String SERVICE_HANDLAGGNING_SVC = "rimfrost-k8s-handlaggning";
+   static final String SERVICE_WORKFLOW = "rimfrost-k8s-workflow";
+   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-handlaggning";
    static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
    static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";

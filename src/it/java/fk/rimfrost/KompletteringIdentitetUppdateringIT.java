@@ -43,14 +43,14 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_WORKFLOW, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_TEAM, TEAM_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_IDENTITET_PRENUMERATION, IDENTITET_PRENUMERATION_BASE_URL, 120);
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING_SVC, HANDLAGGNING_SVC_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_SVC_BASE_URL, 120);
       resetOulDatabase();
       handlaggningDoneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC);
    }

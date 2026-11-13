@@ -136,20 +136,17 @@ public class ProcessRestartIT extends RimfrostTestSupport
 
    /**
     * Drives a VAH handlaggning through rtf-manuell and bekraftabeslut to completion.
-    * Komplettering is triggered on the initial yrkande but not on restart, because the
-    * komplettering PATCH has already written typId="personnummer" on the individ.
+    * Komplettering is triggered on the initial yrkande but not on restart, because
+    * personnummer and folkbokföring have already been written during the first run.
     *
-    * @param withKomplettering true to first assign and complete the unassignable komplettering task
+    * @param withKomplettering true to run the full komplettering round (personnummer + folkbokföring)
     */
    private void driveFlowToCompletion(UUID handlaggningId, boolean withKomplettering)
          throws IOException, InterruptedException
    {
       if (withKomplettering)
       {
-         assignUnassignableUppgift(HANDLAGGARE_ID_PARAM, handlaggningId);
-         var kompletteringData = sendKompletteringGet(handlaggningId);
-         assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
-         assertEquals(204, sendKompletteringDone(handlaggningId));
+         completeMandatoryKomplettering(HANDLAGGARE_ID_PARAM, handlaggningId, INDIVID_PNR);
       }
       var regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
 

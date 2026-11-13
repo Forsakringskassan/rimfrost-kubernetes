@@ -54,7 +54,21 @@ jobs:
       - name: Dump Kubernetes logs
         if: failure()
         run: |
-          kubectl get all -A
-          kubectl describe pods -A
-          for name in `kubectl get pods -o name`; do echo -n -e "\n$name:\n" && kubectl logs "$name" --tail=100; done
+          mkdir -p k8s-logs
+          kubectl get all -A > k8s-logs/get-all.txt
+          kubectl describe pods -A > k8s-logs/describe-pods.txt
+          for name in $(kubectl get pods -o name); do
+            kubectl logs "${name}" --all-containers --prefix > "k8s-logs/${name#pod/}.log" 2>&1 || true
+            kubectl logs "${name}" --all-containers --previous > "k8s-logs/${name#pod/}.previous.log" 2>/dev/null || true
+          done
+          find k8s-logs/ -empty -delete || true
+          kubectl exec dev-kafka-dev-kafka-combined-0 -- bin/kafka-consumer-groups.sh \
+            --bootstrap-server localhost:9092 --describe --all-groups > k8s-logs/consumer-groups.txt 2>&1 || true
         shell: bash
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: k8s-logs
+          path: k8s-logs/

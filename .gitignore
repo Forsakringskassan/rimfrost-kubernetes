@@ -1,3 +1,6 @@
 helm-chart/Chart.lock
 helm-chart/charts/*
 .idea/
+*.iml
+*.log
+*.pid

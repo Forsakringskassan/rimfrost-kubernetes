@@ -15,7 +15,6 @@ import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostH
  * Integration tests for the process restart endpoint:
  * {@code POST /handlaggning/{handlaggningId}/process}.
  */
-@Disabled("Flaky when running on github")
 public class ProcessRestartIT extends RimfrostTestSupport
 {
    private static final String HANDLAGGNING_DONE_ALT_TOPIC = "handlaggning-done-alt";

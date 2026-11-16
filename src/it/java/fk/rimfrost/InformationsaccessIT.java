@@ -26,16 +26,13 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
  * Integration test for the informationsaccess scenario (FKPOC-1102), see RK-FR-01–03 in docs/krav.md.
  *
  * <p>Handläggare A opens the rtf-manuell regel through rtf-manuell-bff, which is expected to publish an
- * {@code InformationsaccessEvent} on the {@code informationsaccess} topic. Requires rtf-manuell with
- * informationsaccess data in the GET response (FKPOC-1103) and an rtf-manuell-bff that publishes the
- * event (FKPOC-1098).
+ * {@code InformationsaccessEvent} on the {@code informationsaccess} topic.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InformationsaccessIT extends RimfrostTestSupport
 {
    private static final String INDIVID_PNR = "19900101-9999";
    private static final String ERBJUDANDE_ID = "7d4a6c38-348b-4f46-9278-b1bfeabc0353";
-
    // regel block in rimfrost-regel-rtf-manuell's config.yaml
    private static final String REGEL_ID = "a11f3429-3a6b-4389-ba1c-c2747b0fb45b";
    private static final String REGEL_VERSION = "1";
@@ -51,7 +48,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_WORKFLOW, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
@@ -80,10 +77,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
       handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
-      assignUnassignableUppgift(HANDLAGGARE_A_VARDE, handlaggningId);
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
-      assertEquals(204, sendKompletteringDone(handlaggningId));
+      completeMandatoryKomplettering(HANDLAGGARE_A_VARDE, handlaggningId, INDIVID_PNR);
 
       uppgiftId = sendUppgifterHandlaggare(HANDLAGGARE_A_VARDE, handlaggningId).getOperativUppgift().getUppgiftId();
 

@@ -64,17 +64,20 @@ BFF.
   med processens steg och exakt ett steg som pågår.
 - **RK-FR-04.3** process-vah-bff ska nå process-vah i klustret och svara på `GET /api/steg` för
   samma aktivitet.
+- **RK-FR-04.4** process-vab-bff ska nå process-vab i klustret. En aktivitet som inte finns i
+  processbeskrivningen ska ge processens 4xx-svar, inte ett fel för att process-vab inte nåddes.
 
 ## Avgränsning
 
-- Scenariot omfattar när en regel öppnas. Om portalens uppgiftslista ska loggas är en öppen
+- Informationsaccess-scenariot omfattar när en regel öppnas. Om portalens uppgiftslista ska loggas är en öppen
   punkt i informationsaccess-kraven och ingår inte.
 - Scenariot omfattar `rimfrost-regel-rtf-manuell-bff`. Övriga regel-BFF:er läggs till när de
   publicerar event.
 - Mimers konsumtion av eventet och leveransen till ILOGG verifieras inte.
 - Beteendet när eventet inte kan publiceras (IA-FR-07) verifieras inte.
-- Processvyns scenario omfattar VAH. VAB driftsätts på samma sätt men verifieras inte här.
-  Att processvyn faktiskt visas i portalen verifieras av portalens e2e-tester.
+- Processvyns scenario omfattar uppgifter från VAH. För VAB verifieras bara att
+  process-vab-bff når process-vab. Att processvyn faktiskt visas i portalen verifieras av
+  portalens e2e-tester.
 - Uppgifter som skapades innan processerna och OUL uppgraderades saknar `aktivitet_id` och
   `processvy_url`. Fälten är valfria, så den lokala miljön behöver inte återställas. Sådana
   uppgifter visas utan processvy.
@@ -84,6 +87,11 @@ BFF.
 Scenariot kräver att regelns backend returnerar informationsaccessdata (FKPOC-1103) och att
 regelns BFF publicerar eventet (RTFB-FR-04), och att båda är driftsatta i miljön. BFF:en
 publicerar via ILogg i `rimfrost-framework-bff` (FKPOC-1098) och behöver Kafka i miljön.
+
+Processvyns scenario kräver att process-vah skickar med aktivitetens ID och processvy-länken
+när en regel startas (process-vah 1.2.3), att OUL sparar och returnerar fälten (OUL 1.9.1,
+FKPOC-1161), att regeln förmedlar dem till OUL (rtf-manuell 1.4.0), och att process-vah-bff
+och process-vab-bff är driftsatta i miljön (FKPOC-1170, FKPOC-1171).
 
 ## Öppna punkter
 

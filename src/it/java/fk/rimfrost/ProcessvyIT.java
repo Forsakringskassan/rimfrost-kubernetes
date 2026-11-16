@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -46,6 +47,12 @@ public class ProcessvyIT extends RimfrostTestSupport
          ? System.getenv("PROCESS_VAH_BFF_BASE_URL")
          : System.getProperty("processVahBffBaseUrl", "http://localhost:9005");
 
+   private static final String SERVICE_PROCESS_VAB_BFF = "rimfrost-k8s-process-vab-bff";
+   private static final int PROCESS_VAB_BFF_SERVICE_PORT = 9006;
+   private static final String PROCESS_VAB_BFF_BASE_URL = System.getenv("PROCESS_VAB_BFF_BASE_URL") != null
+         ? System.getenv("PROCESS_VAB_BFF_BASE_URL")
+         : System.getProperty("processVabBffBaseUrl", "http://localhost:9006");
+
    private static OperativUppgift uppgift;
 
    @BeforeAll
@@ -57,6 +64,8 @@ public class ProcessvyIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_PROCESS_VAH, PROCESS_VAH_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_PROCESS_VAH_BFF, URI.create(PROCESS_VAH_BFF_BASE_URL).getPort(),
             PROCESS_VAH_BFF_SERVICE_PORT, PROCESS_VAH_BFF_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_PROCESS_VAB_BFF, URI.create(PROCESS_VAB_BFF_BASE_URL).getPort(),
+            PROCESS_VAB_BFF_SERVICE_PORT, PROCESS_VAB_BFF_BASE_URL, 120);
       resetOulDatabase();
    }
 
@@ -81,6 +90,8 @@ public class ProcessvyIT extends RimfrostTestSupport
       uppgift = sendUppgifterHandlaggare(HANDLAGGARE_ID_PROCESSVY, handlaggningId).getOperativUppgift();
       assertTrue(uppgift.getUrl().contains("/rtf-manuell"),
             "Expected the rtf-manuell task but got URL: " + uppgift.getUrl());
+      assertFalse(uppgift.getUrl().contains("/rtf-manuell-komplettering"),
+            "Expected the rtf-manuell task but got the komplettering task: " + uppgift.getUrl());
       assertNotNull(uppgift.getAktivitetId(), "aktivitet_id saknas på uppgiften " + uppgift.getUppgiftId());
       assertEquals(PROCESSVY_URL_VAH, uppgift.getProcessvyUrl());
    }
@@ -93,7 +104,7 @@ public class ProcessvyIT extends RimfrostTestSupport
    @DisplayName("RK-FR-04.2: process-vah svarar på GET /processvy/steg för uppgiftens aktivitet")
    void process_vah_svarar_med_steg() throws IOException, InterruptedException
    {
-      assertNotNull(uppgift, "TC1 skapade ingen uppgift");
+      Assumptions.assumeTrue(uppgift != null, "TC1 skapade ingen uppgift");
       var response = sendGetSteg(PROCESS_VAH_BASE_URL + "/processvy/steg", uppgift.getAktivitetId());
       assertEquals(200, response.statusCode(), response.body());
       assertStegMedPagaendeSteg(mapper.readTree(response.body()));
@@ -107,10 +118,25 @@ public class ProcessvyIT extends RimfrostTestSupport
    @DisplayName("RK-FR-04.3: process-vah-bff når process-vah i klustret")
    void process_vah_bff_nar_process_vah() throws IOException, InterruptedException
    {
-      assertNotNull(uppgift, "TC1 skapade ingen uppgift");
+      Assumptions.assumeTrue(uppgift != null, "TC1 skapade ingen uppgift");
       var response = sendGetSteg(PROCESS_VAH_BFF_BASE_URL + "/api/steg", uppgift.getAktivitetId());
       assertEquals(200, response.statusCode(), response.body());
       assertStegMedPagaendeSteg(mapper.readTree(response.body()));
+   }
+
+   /**
+    * TC4: process-vab-bff reaches process-vab inside the cluster. No VAB task is created, so an unknown aktivitetId
+    * is used: process-vab answers 404, which the BFF passes on. If the BFF couldn't reach process-vab, it would
+    * answer 5xx instead.
+    */
+   @Test
+   @Order(4)
+   @DisplayName("RK-FR-04.4: process-vab-bff når process-vab i klustret")
+   void process_vab_bff_nar_process_vab() throws IOException, InterruptedException
+   {
+      var response = sendGetSteg(PROCESS_VAB_BFF_BASE_URL + "/api/steg", UUID.randomUUID());
+      assertTrue(response.statusCode() >= 400 && response.statusCode() < 500,
+            "Expected a 4xx from process-vab, got " + response.statusCode() + ": " + response.body());
    }
 
    private static HttpResponse<String> sendGetSteg(String url, UUID aktivitetId)

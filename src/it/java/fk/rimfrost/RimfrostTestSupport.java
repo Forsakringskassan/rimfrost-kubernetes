@@ -397,9 +397,31 @@ abstract class RimfrostTestSupport
    static PostUppgifterHandlaggareResponse assignUnassignableUppgift(String handlaggareId, UUID handlaggningId,
          String idTyp) throws IOException, InterruptedException
    {
+      var uppgiftId = waitForUnassignableUppgiftId(handlaggareId, handlaggningId, idTyp);
+      return claimUppgift(handlaggareId, handlaggningId, uppgiftId);
+   }
+
+   /**
+    * Polls POST /uppgifter/individ/unassignable until the komplettering task for the given
+    * handläggning appears, then returns its ID <em>without claiming it</em>.
+    *
+    * <p>Use this as the first half of a two-phase assign when other state (e.g. folkbokföring PUT)
+    * must happen before the claim triggers an OUL ASSIGNMENT Kafka notification — which would
+    * otherwise cause {@code handleOulStatus} to read-modify-write the handläggning and overwrite
+    * the state you are about to write.
+    *
+    * @param handlaggareId the handläggare performing the lookup (used for the Authorization header)
+    * @param handlaggningId the handläggning whose task to find
+    * @param idTyp the individ identity typId (must match the typId used when the yrkande was created)
+    * @return the uppgiftId of the matching task
+    * @see #claimUppgift(String, UUID, UUID)
+    */
+   static UUID waitForUnassignableUppgiftId(String handlaggareId, UUID handlaggningId, String idTyp)
+         throws IOException, InterruptedException
+   {
       var pnr = INDIVID_BY_HANDLAGGNING.get(handlaggningId);
-      assertNotNull(pnr, "Inget personnummer registrerat för handlaggningId " + handlaggningId
-            + " (skapades den via sendYrkandeRequest?)");
+      assertNotNull(pnr, "No personnummer registered for handlaggningId " + handlaggningId
+            + " — call sendYrkandeRequest first");
 
       var searchRequest = new PostUppgifterIndividUnassignableRequest();
       searchRequest.setIdTyp(idTyp);
@@ -417,8 +439,8 @@ abstract class RimfrostTestSupport
       int attempt = 0;
       while (uppgiftId == null && attempt < 120)
       {
-         System.out.printf("assignUnassignableUppgift attempt %d waiting for task with handlaggningId %s%n", attempt,
-               handlaggningId);
+         System.out.printf("waitForUnassignableUppgiftId attempt %d waiting for task with handlaggningId %s%n",
+               attempt, handlaggningId);
          var searchResponse = httpSendRetries(client, search, HttpResponse.BodyHandlers.ofString(), 200, 5);
          uppgiftId = mapper.readValue(searchResponse.body(), PostUppgifterIndividUnassignableResponse.class)
                .getOperativaUppgifter().stream()
@@ -434,15 +456,32 @@ abstract class RimfrostTestSupport
       }
       if (uppgiftId == null)
       {
-         fail("Ingen otilldelningsbar uppgift med handlaggningId " + handlaggningId + " hittades efter " + attempt
-               + " försök");
+         fail("No unassignable task found for handlaggningId " + handlaggningId + " after " + attempt + " attempts");
       }
       if (attempt > 1)
       {
-         System.out.printf("assignUnassignableUppgift succeeded after %d attempts for handlaggningId %s%n", attempt,
+         System.out.printf("waitForUnassignableUppgiftId succeeded after %d attempts for handlaggningId %s%n", attempt,
                handlaggningId);
       }
+      return uppgiftId;
+   }
 
+   /**
+    * Claims the given unassignable task via POST /uppgifter/{uppgiftId}/handlaggare.
+    *
+    * <p>This triggers an OUL ASSIGNMENT Kafka notification, which causes {@code handleOulStatus}
+    * to read-modify-write the handläggning. Any state that must survive that write-back (e.g. a
+    * folkbokföring PUT) must be persisted <em>before</em> calling this method.
+    *
+    * @param handlaggareId  the handläggare to assign the task to
+    * @param handlaggningId the handläggning the task belongs to
+    * @param uppgiftId      the task to claim (from {@link #waitForUnassignableUppgiftId})
+    * @return the assigned task response
+    * @see #waitForUnassignableUppgiftId(String, UUID, String)
+    */
+   static PostUppgifterHandlaggareResponse claimUppgift(String handlaggareId, UUID handlaggningId, UUID uppgiftId)
+         throws IOException, InterruptedException
+   {
       var assign = HttpRequest.newBuilder()
             .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
             .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
@@ -484,7 +523,7 @@ abstract class RimfrostTestSupport
       if (response.getOperativUppgift() == null
             || !expectedHandlaggningId.equals(response.getOperativUppgift().getHandlaggningId()))
       {
-         fail("Ingen uppgift med handlaggningId " + expectedHandlaggningId + " hittades efter " + attempt + " försök");
+         fail("No task found for handlaggningId " + expectedHandlaggningId + " after " + attempt + " attempts");
       }
       if (attempt > 1)
       {

@@ -94,12 +94,10 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
       assertNotNull(handlaggningId);
 
-      // Komplettering OUL-uppgift skapas; processen parkeras.
+      // Hitta kompletteringsuppgiften utan att ta den (ingen ASSIGNMENT-notifiering ännu).
+      // Uppgiften finns när handleRegelRequest har körts klart och OUL har persisterat den.
       // Kompletteringsuppgifter skapas med assignable=false och hittas därför inte via POST /uppgifter/handlaggare.
-      var kompletteringTask = assignUnassignableUppgift(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
-      var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
-      assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
-            "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);
+      var uppgiftId = waitForUnassignableUppgiftId(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
 
       // Verifiera att folkbokföring saknas i handläggningen innan extern uppdatering.
       var initialHandlaggning = sendGetHandlaggning(handlaggningId);
@@ -109,7 +107,17 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       assertFalse(hasFolkbokforing, "Folkbokföring sakfraga ska inte finnas innan extern uppdatering");
 
       // Extern källa skriver folkbokföringsdata till handläggningen.
+      // PUT måste ske INNAN task-claim så att OUL:s handleOulStatus (ASSIGNMENT) läser handläggningen
+      // med folkbokföring och skriver tillbaka med folkbokföring — annars riskerar write-back att
+      // skriva över folkbokföringen (race condition).
       assertEquals(200, sendPutHandlaggningWithFolkbokforing(handlaggningId, initialHandlaggning));
+
+      // Ta kompletteringsuppgiften. Detta triggar OUL ASSIGNMENT-notifiering → handleOulStatus
+      // läser handläggningen (nu med folkbokföring) och skriver tillbaka med folkbokföring.
+      var kompletteringTask = claimUppgift(HANDLAGGARE_ID_VARDE, handlaggningId, uppgiftId);
+      var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
+      assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
+            "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);
 
       // Extern källa triggar IdentitetUppdateradEvent — kompletteringstjänsten tar emot eventet,
       // läser om handläggningen (nu med folkbokföring-sakfraga), isKompletteringRequired() = false,

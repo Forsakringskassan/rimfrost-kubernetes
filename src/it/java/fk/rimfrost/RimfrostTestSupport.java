@@ -1050,7 +1050,7 @@ abstract class RimfrostTestSupport
    static void waitForServiceRestartingPortForward(String serviceName, int localPort, int remotePort,
          String baseUrl, int timeoutSeconds) throws IOException, InterruptedException
    {
-      System.out.println("Waiting for " + baseUrl + " (restarting port-forward as needed)");
+      System.out.println("Waiting for " + serviceName + " (" + baseUrl + ", restarting port-forward as needed)");
       new ProcessBuilder("sh", "-c", "pkill -f 'kubectl port-forward.*" + localPort + "' 2>/dev/null; true")
             .start().waitFor();
       var deadline = java.time.Instant.now().plusSeconds(timeoutSeconds);
@@ -1073,7 +1073,7 @@ abstract class RimfrostTestSupport
                var response = client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
                if (response.statusCode() < 500)
                {
-                  System.out.println("Service ready: " + baseUrl);
+                  System.out.println("Service ready: " + serviceName);
                   return;
                }
             }

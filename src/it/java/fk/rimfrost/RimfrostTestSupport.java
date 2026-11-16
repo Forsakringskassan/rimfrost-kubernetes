@@ -184,7 +184,6 @@ abstract class RimfrostTestSupport
             response = client.send(request, bodyHandler);
             if (response.statusCode() == expectedStatus)
             {
-               System.out.printf("httpSendRetries Attempt %s successful waiting for status %s%n", attempt, expectedStatus);
                return response;
             }
             System.out.printf("httpSendRetries Attempt %s failed with status code %s%n", attempt, response.statusCode());
@@ -259,6 +258,11 @@ abstract class RimfrostTestSupport
             System.out.printf("-- Found kafka message: %s%n", value);
             if (kafkaMessageHasHandlaggningId(value, handlaggningId))
             {
+               if (attempt > 0)
+               {
+                  System.out.printf("awaitKafkaMessage succeeded after %d attempts for handlaggningId %s%n", attempt,
+                        handlaggningId);
+               }
                return value;
             }
          }
@@ -433,6 +437,11 @@ abstract class RimfrostTestSupport
          fail("Ingen otilldelningsbar uppgift med handlaggningId " + handlaggningId + " hittades efter " + attempt
                + " försök");
       }
+      if (attempt > 1)
+      {
+         System.out.printf("assignUnassignableUppgift succeeded after %d attempts for handlaggningId %s%n", attempt,
+               handlaggningId);
+      }
 
       var assign = HttpRequest.newBuilder()
             .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
@@ -476,6 +485,11 @@ abstract class RimfrostTestSupport
             || !expectedHandlaggningId.equals(response.getOperativUppgift().getHandlaggningId()))
       {
          fail("Ingen uppgift med handlaggningId " + expectedHandlaggningId + " hittades efter " + attempt + " försök");
+      }
+      if (attempt > 1)
+      {
+         System.out.printf("sendUppgifterHandlaggare succeeded after %d attempts for handlaggningId %s%n", attempt,
+               expectedHandlaggningId);
       }
       ASSIGNED_HANDLAGGARE.put(expectedHandlaggningId, handlaggareId);
       return response;

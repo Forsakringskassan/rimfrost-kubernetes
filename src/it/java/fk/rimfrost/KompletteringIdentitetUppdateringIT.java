@@ -16,21 +16,16 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
  *
  * <p>The scenario: a yrkande arrives with {@code typId="personnummer"} and a known PNR, but the
  * handläggning is missing folkbokföring data in its {@code sakfragorStallningstaganden}. The
- * komplettering service therefore determines that komplettering is required, creates an OUL task,
- * and registers a prenumeration with {@code rimfrost-service-identitet-prenumeration} for the
- * individ's personnummer identity.
+ * komplettering service therefore determines that komplettering is required, registers a
+ * prenumeration with {@code rimfrost-service-identitet-prenumeration} for the individ's
+ * personnummer identity, and creates an unassignable OUL task (the process parks here).
  *
  * <p>An external system then writes the folkbokföring data directly to the handläggning (via
  * {@code PUT /handlaggning/{id}}) and fires an {@code IdentitetUppdateradEvent} via
  * {@link #sendTriggerIdentitetDataChanged}. The komplettering service receives the event,
  * re-reads the handläggning (now containing the folkbokföring sakfraga), determines that
- * komplettering is no longer required, ends the OUL task, and sends a
- * {@code RegelResponseMessage} back to the process.
- *
- * <p><b>Assumption:</b> {@code rimfrost-regel-rtf-manuell-komplettering} must be extended so that
- * {@code isKompletteringRequired()} also checks for the presence of a
- * {@code sakfragorStallningstaganden} entry with {@code objektTypId = "folkbokforing"}. This test
- * will fail until that extension and the identitet-prenumeration subscription support are in place.
+ * komplettering is no longer required, ends the OUL task automatically — no handläggare
+ * interaction required — and sends a {@code RegelResponseMessage} back to the process.
  */
 public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
 {
@@ -68,16 +63,15 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
     * <p>Sequence:
     * <ol>
     *   <li>POST /yrkande med {@code typId="personnummer"} — personnummer är känt, folkbokföring
-    *       saknas. Kompletteringstjänsten bedömer att komplettering krävs (ingen folkbokföring-
-    *       sakfraga) och registrerar en prenumeration för personnumret.</li>
-    *   <li>OUL-uppgift av typ komplettering skapas och processen parkeras.</li>
+    *       saknas. Kompletteringstjänsten bedömer att komplettering krävs, registrerar en
+    *       prenumeration och skapar en unassignable OUL-uppgift. Processen parkeras.</li>
     *   <li>PUT /handlaggning/{id} — simulerar att extern källa skriver folkbokföringsdata till
     *       handläggningens {@code sakfragorStallningstaganden}.</li>
     *   <li>POST /test/identitet-data-changed — extern källa triggar {@code IdentitetUppdateradEvent}
     *       för personnumret.</li>
     *   <li>Kompletteringstjänsten tar emot eventet, läser om handläggningen (nu med folkbokföring),
-    *       bedömer att komplettering inte längre krävs, stänger OUL-uppgiften och skickar
-    *       {@code RegelResponseMessage}.</li>
+    *       bedömer att komplettering inte längre krävs, stänger OUL-uppgiften automatiskt och
+    *       skickar {@code RegelResponseMessage} — ingen handläggarinteraktion krävs.</li>
     * </ol>
     */
    @Test
@@ -94,10 +88,10 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
       assertNotNull(handlaggningId);
 
-      // Hitta kompletteringsuppgiften utan att ta den (ingen ASSIGNMENT-notifiering ännu).
-      // Uppgiften finns när handleRegelRequest har körts klart och OUL har persisterat den.
-      // Kompletteringsuppgifter skapas med assignable=false och hittas därför inte via POST /uppgifter/handlaggare.
-      var uppgiftId = waitForUnassignableUppgiftId(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
+      // Vänta tills kompletteringsuppgiften har skapats i OUL (assignable=false — syns inte via
+      // POST /uppgifter/handlaggare). Används som synkroniseringspunkt: när uppgiften finns har
+      // handleRegelRequest körts klart och prenumerationen registrerats.
+      waitForUnassignableUppgiftId(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
 
       // Verifiera att folkbokföring saknas i handläggningen innan extern uppdatering.
       var initialHandlaggning = sendGetHandlaggning(handlaggningId);
@@ -107,17 +101,7 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       assertFalse(hasFolkbokforing, "Folkbokföring sakfraga ska inte finnas innan extern uppdatering");
 
       // Extern källa skriver folkbokföringsdata till handläggningen.
-      // PUT måste ske INNAN task-claim så att OUL:s handleOulStatus (ASSIGNMENT) läser handläggningen
-      // med folkbokföring och skriver tillbaka med folkbokföring — annars riskerar write-back att
-      // skriva över folkbokföringen (race condition).
       assertEquals(200, sendPutHandlaggningWithFolkbokforing(handlaggningId, initialHandlaggning));
-
-      // Ta kompletteringsuppgiften. Detta triggar OUL ASSIGNMENT-notifiering → handleOulStatus
-      // läser handläggningen (nu med folkbokföring) och skriver tillbaka med folkbokföring.
-      var kompletteringTask = claimUppgift(HANDLAGGARE_ID_VARDE, handlaggningId, uppgiftId);
-      var kompletteringUrl = kompletteringTask.getOperativUppgift().getUrl();
-      assertTrue(kompletteringUrl.contains("/rtf-manuell-komplettering"),
-            "Förväntad kompletteringsuppgift men fick URL: " + kompletteringUrl);
 
       // Extern källa triggar IdentitetUppdateradEvent — kompletteringstjänsten tar emot eventet,
       // läser om handläggningen (nu med folkbokföring-sakfraga), isKompletteringRequired() = false,

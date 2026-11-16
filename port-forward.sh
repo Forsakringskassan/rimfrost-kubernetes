@@ -41,6 +41,8 @@ forward_service '-rtf-manuell-bff$' 9002 rtf_manuell_bff 9002
 forward_service '-bekraftabeslut-bff$' 9003 bekraftabeslut_bff 9003
 forward_service '-rtf-manuell-komplettering-bff$' 9004 rtf_manuell_komplettering_bff 9004
 forward_service '-template-micro-fe-bff$' 9009 template_micro_fe_bff 9009
+forward_service '-process-vah-bff$' 9005 process_vah_bff 9005
+forward_service '-process-vab-bff$' 9006 process_vab_bff 9006
 
 # FE apps (static httpd containers, no /q/health — see wait_for_http below)
 forward_service '-portal-handlaggare$' 8894 portal_handlaggare
@@ -49,6 +51,8 @@ forward_service '-rtf-manuell-fe$' 8896 rtf_manuell_fe
 forward_service '-bekraftabeslut-fe$' 8897 bekraftabeslut_fe
 forward_service '-template-micro-fe$' 8898 template_micro_fe
 forward_service '-rtf-manuell-komplettering-fe$' 8900 rtf_manuell_komplettering_fe
+forward_service '-process-vah-fe$' 8901 process_vah_fe
+forward_service '-process-vab-fe$' 8902 process_vab_fe
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
@@ -88,8 +92,8 @@ wait_for_http() {
 }
 
 wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 && wait_for_health 8899 \
-  && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9004 && wait_for_health 9009 \
-  && wait_for_http 8894 && wait_for_http 8895 && wait_for_http 8896 && wait_for_http 8897 && wait_for_http 8898 && wait_for_http 8900
+  && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9004 && wait_for_health 9009 && wait_for_health 9005 && wait_for_health 9006 \
+  && wait_for_http 8894 && wait_for_http 8895 && wait_for_http 8896 && wait_for_http 8897 && wait_for_http 8898 && wait_for_http 8900 && wait_for_http 8901 && wait_for_http 8902
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then

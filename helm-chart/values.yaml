@@ -74,7 +74,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 1.2.1
+      tag: 1.2.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -91,7 +91,7 @@ quarkus:
   - name: vab
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
-      tag: 0.1.1
+      tag: 0.1.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -231,7 +231,7 @@ quarkus:
   - name: portal-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-bff
-      tag: 2.2.1
+      tag: 2.3.0
     containerPort: 9001
     servicePort: 9001
     env:
@@ -264,6 +264,18 @@ quarkus:
           module: BekraftaBeslut
           devEntry: http://localhost:3033/mf-manifest.json
           prodEntry: http://localhost:8897/mf-manifest.json
+        # Processvyerna (stegindikatorn) ovanför uppgiften. Nyckeln är processens
+        # namn i uppgiftens processvyUrl (/process/vah, /process/vab).
+        vah:
+          scope: processVahApp
+          module: ProcessVy
+          devEntry: http://localhost:3041/mf-manifest.json
+          prodEntry: http://localhost:8901/mf-manifest.json
+        vab:
+          scope: processVabApp
+          module: ProcessVy
+          devEntry: http://localhost:3043/mf-manifest.json
+          prodEntry: http://localhost:8902/mf-manifest.json
         remoteExample:
           scope: remoteExample
           module: ExampleComponent
@@ -374,11 +386,54 @@ quarkus:
         value: "informationsaccess"
     waitForKafka: true
 
+  - name: process-vah-bff
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-process-vah-bff
+      tag: 0.1.0
+    containerPort: 9005
+    servicePort: 9005
+    env:
+      # process-vah's GET /processvy/steg, reached inside the cluster.
+      - name: PROCESS_VAH_URL
+        value: "http://rimfrost-k8s-vah:8080"
+      # :8901 is process-vah-fe's port-forward.sh port (see apache: list below).
+      # :8894 (portal-handlaggare) is needed too: the processvy is loaded as a
+      # Module Federation remote, so the browser's Origin is the shell's.
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8901,http://localhost:8894"
+      # rimfrost-framework-bff publishes ILogg events, so the BFF needs Kafka.
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
+  - name: process-vab-bff
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-process-vab-bff
+      tag: 0.0.1
+    containerPort: 9006
+    servicePort: 9006
+    env:
+      # process-vab's GET /processvy/steg, reached inside the cluster.
+      - name: PROCESS_VAB_URL
+        value: "http://rimfrost-k8s-vab:8080"
+      # :8902 is process-vab-fe's port-forward.sh port (see apache: list below).
+      # :8894 (portal-handlaggare) is needed too: the processvy is loaded as a
+      # Module Federation remote, so the browser's Origin is the shell's.
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8902,http://localhost:8894"
+      # rimfrost-framework-bff publishes ILogg events, so the BFF needs Kafka.
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
+
 apache:
   - name: portal-handlaggare
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-handlaggare
-      tag: 0.4.0
+      tag: 0.5.0
     # Browser-facing: the FE calls the BFF from the host machine via
     # port-forward.sh's localhost tunnel, same as each app's VITE_BFF_URL default.
     runtimeConfig:
@@ -422,6 +477,20 @@ apache:
     cors: true
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9009
+  - name: process-vah-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-process-vah-fe
+      tag: 0.0.1
+    runtimeConfig:
+      RUNTIME_BFF_URL: http://localhost:9005
+    cors: true
+  - name: process-vab-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-process-vab-fe
+      tag: 0.0.1
+    runtimeConfig:
+      RUNTIME_BFF_URL: http://localhost:9006
+    cors: true
 
 ingress:
   enabled: true

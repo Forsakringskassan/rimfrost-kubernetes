@@ -38,7 +38,11 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.PatchErsattningRequest;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.UpdateErsattning;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.GetHandlaggningResponse;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.HandlaggningUpdate;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.SakfragaStallningstagandeContainer;
 import se.fk.rimfrost.regel.rtf.manuell.komplettering.jaxrsspec.controllers.generatedsource.model.RtfKompletteringData;
+import se.fk.rimfrost.service.identitet.prenumeration.test.jaxrsspec.controllers.generatedsource.model.TriggerRequest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 abstract class RimfrostTestSupport
@@ -64,8 +68,17 @@ abstract class RimfrostTestSupport
    static final String RTF_MANUELL_BFF_BASE_URL = System.getenv("RTF_MANUELL_BFF_BASE_URL") != null
          ? System.getenv("RTF_MANUELL_BFF_BASE_URL")
          : System.getProperty("regelRtfManuellBffBaseUrl", "http://localhost:9002");
+   static final String IDENTITET_PRENUMERATION_BASE_URL = System.getenv("IDENTITET_PRENUMERATION_BASE_URL") != null
+         ? System.getenv("IDENTITET_PRENUMERATION_BASE_URL")
+         : System.getProperty("identitetPrenumerationBaseUrl", "http://localhost:8901");
+   static final String HANDLAGGNING_SVC_BASE_URL = System.getenv("HANDLAGGNING_SVC_BASE_URL") != null
+         ? System.getenv("HANDLAGGNING_SVC_BASE_URL")
+         : System.getProperty("handlaggningServiceBaseUrl", "http://localhost:8902");
 
    static final String IDTYP_TYP_ID = "c5f2e2b4-9143-4160-8f4b-30c172f0ac05";
+   static final String IDTYP_PERSONNUMMER = "personnummer";
+   static final String FOLKBOKFORING_OBJEKT_TYP_ID = "folkbokforing";
+   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String YRKANDESTATUS_ID = "e27da561-a8db-4513-8272-ef652b097b16";
 
    /** Personnummer per handläggning, used to look up unassignable tasks in OUL. */
@@ -86,7 +99,6 @@ abstract class RimfrostTestSupport
             : builder.header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggare);
    }
 
-   static final String YRKANDE_ROLL_ID = "80f5f41f-9e55-4fc2-a076-ad5a651e0a9d";
    static final String HANDLAGGARE_ID = "116759e4-18fd-4209-849c-90abbd257d22";
    static final String HANDLAGGARE_A_VARDE = "111111111";
    static final String HANDLAGGARE_C_VARDE = "333333333";
@@ -97,12 +109,14 @@ abstract class RimfrostTestSupport
    static final String DEPLOYMENT_UPPGIFTSLAGER = "rimfrost-k8s-uppgiftslager";
    static final String DEPLOYMENT_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
 
-   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-workflow";
+   static final String SERVICE_WORKFLOW = "rimfrost-k8s-workflow";
+   static final String SERVICE_HANDLAGGNING = "rimfrost-k8s-handlaggning";
    static final String SERVICE_OUL = "rimfrost-k8s-uppgiftslager";
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
    static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
    static final String SERVICE_TEAM = "rimfrost-k8s-team";
+   static final String SERVICE_IDENTITET_PRENUMERATION = "rimfrost-k8s-identitet-prenumeration";
    static final String SERVICE_RTF_MANUELL_BFF = "rimfrost-k8s-rtf-manuell-bff";
    static final int RTF_MANUELL_BFF_SERVICE_PORT = 9002;
 
@@ -170,7 +184,6 @@ abstract class RimfrostTestSupport
             response = client.send(request, bodyHandler);
             if (response.statusCode() == expectedStatus)
             {
-               System.out.printf("httpSendRetries Attempt %s successful waiting for status %s%n", attempt, expectedStatus);
                return response;
             }
             System.out.printf("httpSendRetries Attempt %s failed with status code %s%n", attempt, response.statusCode());
@@ -245,6 +258,11 @@ abstract class RimfrostTestSupport
             System.out.printf("-- Found kafka message: %s%n", value);
             if (kafkaMessageHasHandlaggningId(value, handlaggningId))
             {
+               if (attempt > 0)
+               {
+                  System.out.printf("awaitKafkaMessage succeeded after %d attempts for handlaggningId %s%n", attempt,
+                        handlaggningId);
+               }
                return value;
             }
          }
@@ -282,11 +300,34 @@ abstract class RimfrostTestSupport
       }
    }
 
+   /**
+    * Sends a POST /yrkande using {@link #IDTYP_TYP_ID} as the individ typId.
+    *
+    * @see #sendYrkandeRequest(String, String, String, OffsetDateTime, OffsetDateTime)
+    */
    static PostYrkandeResponse sendYrkandeRequest(String pnr, String ingangtypId,
          OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
    {
+      return sendYrkandeRequest(IDTYP_TYP_ID, pnr, ingangtypId, yrkandeFrom, yrkandeTom);
+   }
+
+   /**
+    * Sends a POST /yrkande with the given {@code typId} as the individ identity type.
+    * Use {@link #IDTYP_PERSONNUMMER} to produce a yrkande recognised by
+    * {@code getPrenumerationsIdentiteter()}, or {@link #IDTYP_TYP_ID} for the UUID-based variant.
+    *
+    * @param typId       the identity type to set on the individ role (e.g. "personnummer")
+    * @param pnr         the identity value (personnummer or other identifier)
+    * @param ingangtypId the erbjudande to associate the yrkande with
+    * @param yrkandeFrom period start
+    * @param yrkandeTom  period end
+    * @return the deserialized POST /yrkande response
+    */
+   static PostYrkandeResponse sendYrkandeRequest(String typId, String pnr, String ingangtypId,
+         OffsetDateTime yrkandeFrom, OffsetDateTime yrkandeTom) throws IOException, InterruptedException
+   {
       var idTyp = new Idtyp();
-      idTyp.setTypId(IDTYP_TYP_ID);
+      idTyp.setTypId(typId);
       idTyp.setVarde(pnr);
 
       var rollIYrkande = new PostRollIYrkande();
@@ -343,12 +384,47 @@ abstract class RimfrostTestSupport
    static PostUppgifterHandlaggareResponse assignUnassignableUppgift(String handlaggareId, UUID handlaggningId)
          throws IOException, InterruptedException
    {
+      return assignUnassignableUppgift(handlaggareId, handlaggningId, IDTYP_TYP_ID);
+   }
+
+   /**
+    * Like {@link #assignUnassignableUppgift(String, UUID)} but lets the caller specify the individ
+    * identity typId used when searching OUL for the unassignable task.
+    *
+    * <p>Use this when the yrkande was created with a typId other than {@link #IDTYP_TYP_ID}, e.g.
+    * {@link #IDTYP_PERSONNUMMER}, since OUL stores the task under the same typId as the yrkande.
+    */
+   static PostUppgifterHandlaggareResponse assignUnassignableUppgift(String handlaggareId, UUID handlaggningId,
+         String idTyp) throws IOException, InterruptedException
+   {
+      var uppgiftId = waitForUnassignableUppgiftId(handlaggareId, handlaggningId, idTyp);
+      return claimUppgift(handlaggareId, handlaggningId, uppgiftId);
+   }
+
+   /**
+    * Polls POST /uppgifter/individ/unassignable until the komplettering task for the given
+    * handläggning appears, then returns its ID <em>without claiming it</em>.
+    *
+    * <p>Use this as the first half of a two-phase assign when other state (e.g. folkbokföring PUT)
+    * must happen before the claim triggers an OUL ASSIGNMENT Kafka notification — which would
+    * otherwise cause {@code handleOulStatus} to read-modify-write the handläggning and overwrite
+    * the state you are about to write.
+    *
+    * @param handlaggareId the handläggare performing the lookup (used for the Authorization header)
+    * @param handlaggningId the handläggning whose task to find
+    * @param idTyp the individ identity typId (must match the typId used when the yrkande was created)
+    * @return the uppgiftId of the matching task
+    * @see #claimUppgift(String, UUID, UUID)
+    */
+   static UUID waitForUnassignableUppgiftId(String handlaggareId, UUID handlaggningId, String idTyp)
+         throws IOException, InterruptedException
+   {
       var pnr = INDIVID_BY_HANDLAGGNING.get(handlaggningId);
-      assertNotNull(pnr, "Inget personnummer registrerat för handlaggningId " + handlaggningId
-            + " (skapades den via sendYrkandeRequest?)");
+      assertNotNull(pnr, "No personnummer registered for handlaggningId " + handlaggningId
+            + " — call sendYrkandeRequest first");
 
       var searchRequest = new PostUppgifterIndividUnassignableRequest();
-      searchRequest.setIdTyp(IDTYP_TYP_ID);
+      searchRequest.setIdTyp(idTyp);
       searchRequest.setIdVarde(pnr);
       searchRequest.setStatuses(List.of(PostUppgifterIndividUnassignableRequest.StatusesEnum.NY));
       var search = HttpRequest.newBuilder()
@@ -363,8 +439,8 @@ abstract class RimfrostTestSupport
       int attempt = 0;
       while (uppgiftId == null && attempt < 120)
       {
-         System.out.printf("assignUnassignableUppgift attempt %d waiting for task with handlaggningId %s%n", attempt,
-               handlaggningId);
+         System.out.printf("waitForUnassignableUppgiftId attempt %d waiting for task with handlaggningId %s%n",
+               attempt, handlaggningId);
          var searchResponse = httpSendRetries(client, search, HttpResponse.BodyHandlers.ofString(), 200, 5);
          uppgiftId = mapper.readValue(searchResponse.body(), PostUppgifterIndividUnassignableResponse.class)
                .getOperativaUppgifter().stream()
@@ -380,10 +456,32 @@ abstract class RimfrostTestSupport
       }
       if (uppgiftId == null)
       {
-         fail("Ingen otilldelningsbar uppgift med handlaggningId " + handlaggningId + " hittades efter " + attempt
-               + " försök");
+         fail("No unassignable task found for handlaggningId " + handlaggningId + " after " + attempt + " attempts");
       }
+      if (attempt > 1)
+      {
+         System.out.printf("waitForUnassignableUppgiftId succeeded after %d attempts for handlaggningId %s%n", attempt,
+               handlaggningId);
+      }
+      return uppgiftId;
+   }
 
+   /**
+    * Claims the given unassignable task via POST /uppgifter/{uppgiftId}/handlaggare.
+    *
+    * <p>This triggers an OUL ASSIGNMENT Kafka notification, which causes {@code handleOulStatus}
+    * to read-modify-write the handläggning. Any state that must survive that write-back (e.g. a
+    * folkbokföring PUT) must be persisted <em>before</em> calling this method.
+    *
+    * @param handlaggareId  the handläggare to assign the task to
+    * @param handlaggningId the handläggning the task belongs to
+    * @param uppgiftId      the task to claim (from {@link #waitForUnassignableUppgiftId})
+    * @return the assigned task response
+    * @see #waitForUnassignableUppgiftId(String, UUID, String)
+    */
+   static PostUppgifterHandlaggareResponse claimUppgift(String handlaggareId, UUID handlaggningId, UUID uppgiftId)
+         throws IOException, InterruptedException
+   {
       var assign = HttpRequest.newBuilder()
             .uri(URI.create(UPPGIFTER_URL + "/" + uppgiftId + "/handlaggare"))
             .header("Authorization", "Bearer " + HANDLAGGARE_ID + ":" + handlaggareId)
@@ -425,7 +523,12 @@ abstract class RimfrostTestSupport
       if (response.getOperativUppgift() == null
             || !expectedHandlaggningId.equals(response.getOperativUppgift().getHandlaggningId()))
       {
-         fail("Ingen uppgift med handlaggningId " + expectedHandlaggningId + " hittades efter " + attempt + " försök");
+         fail("No task found for handlaggningId " + expectedHandlaggningId + " after " + attempt + " attempts");
+      }
+      if (attempt > 1)
+      {
+         System.out.printf("sendUppgifterHandlaggare succeeded after %d attempts for handlaggningId %s%n", attempt,
+               expectedHandlaggningId);
       }
       ASSIGNED_HANDLAGGARE.put(expectedHandlaggningId, handlaggareId);
       return response;
@@ -556,6 +659,65 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * GET /handlaggning/{handlaggningId} — reads the full handläggning including its yrkande and
+    * {@code sakfragorStallningstaganden}. Used to inspect current state before and after external
+    * system writes.
+    *
+    * @param handlaggningId the handläggning to fetch
+    * @return the deserialized response (HTTP 200 asserted)
+    */
+   static GetHandlaggningResponse sendGetHandlaggning(UUID handlaggningId)
+         throws IOException, InterruptedException
+   {
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_SVC_BASE_URL + "/handlaggning/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertEquals(200, response.statusCode(), "GET handlaggning returned unexpected status");
+      return mapper.readValue(response.body(), GetHandlaggningResponse.class);
+   }
+
+   /**
+    * PUT /handlaggning/{handlaggningId} — simulates an external system writing a folkbokföring
+    * entry into the yrkande's {@code sakfragorStallningstaganden}. The existing sakfrågor are
+    * preserved; a new entry with {@code objektTypId = "folkbokforing"} is appended.
+    *
+    * @param handlaggningId the handläggning to update
+    * @param getResponse    the current handläggning state obtained via {@link #sendGetHandlaggning}
+    * @return the HTTP status code (200 on success, 409 on version conflict)
+    */
+   static int sendPutHandlaggningWithFolkbokforing(UUID handlaggningId, GetHandlaggningResponse getResponse)
+         throws IOException, InterruptedException
+   {
+      var handlaggning = getResponse.getHandlaggning();
+      var folkbokforingContainer = new SakfragaStallningstagandeContainer();
+      folkbokforingContainer.setId(UUID.randomUUID());
+      folkbokforingContainer.setObjektTypId(FOLKBOKFORING_OBJEKT_TYP_ID);
+      folkbokforingContainer.setData(
+            "{\"id\":\"fb-test-1\",\"fornamn\":\"Test\",\"efternamn\":\"Testsson\","
+                  + "\"kon\":\"MAN\",\"utdelningsadress\":\"Testgatan 1\","
+                  + "\"postnummer\":\"12345\",\"postort\":\"Teststaden\",\"careOf\":\"\"}");
+
+      var updatedSakfragor = new java.util.ArrayList<>(handlaggning.getYrkande().getSakfragorStallningstaganden());
+      updatedSakfragor.add(folkbokforingContainer);
+      handlaggning.getYrkande().setSakfragorStallningstaganden(updatedSakfragor);
+
+      var handlaggningUpdate = new HandlaggningUpdate();
+      handlaggningUpdate.setHandlaggning(handlaggning);
+
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(HANDLAGGNING_SVC_BASE_URL + "/handlaggning/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(handlaggningUpdate)))
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   /**
     * GET /regel/rtf-manuell-komplettering/{handlaggningId} — reads current komplettering data.
     *
     * @return the deserialized komplettering data (personnummer and avsikt)
@@ -598,6 +760,36 @@ abstract class RimfrostTestSupport
    }
 
    /**
+    * Completes the mandatory komplettering round that every VAH yrkande goes through.
+    *
+    * <p>Assigns the unassignable komplettering task to {@code handlaggareId}, patches personnummer,
+    * writes folkbokföring to the handläggning so that {@code isKompletteringRequired()} returns
+    * false, and marks the task done. The main OUL regel task is created synchronously within
+    * {@code sendKompletteringDone}.
+    *
+    * <p>Use this in tests that need to advance past komplettering without specifically testing
+    * komplettering behavior. Returns the komplettering task response so callers can inspect the
+    * task URL if needed (e.g. to assert it contains {@code /rtf-manuell-komplettering}).
+    *
+    * @param handlaggareId the handläggare to assign the task to
+    * @param handlaggningId the handläggning to complete komplettering for
+    * @param pnr the personnummer to supply in the PATCH
+    * @return the assigned komplettering task (URL accessible via getOperativUppgift().getUrl())
+    */
+   static PostUppgifterHandlaggareResponse completeMandatoryKomplettering(
+         String handlaggareId, UUID handlaggningId, String pnr)
+         throws IOException, InterruptedException
+   {
+      var kompletteringTask = assignUnassignableUppgift(handlaggareId, handlaggningId);
+      var kompletteringData = sendKompletteringGet(handlaggningId);
+      assertEquals(204, sendKompletteringPatch(handlaggningId, pnr, kompletteringData.getAvsikt()));
+      var currentHandlaggning = sendGetHandlaggning(handlaggningId);
+      assertEquals(200, sendPutHandlaggningWithFolkbokforing(handlaggningId, currentHandlaggning));
+      assertEquals(204, sendKompletteringDone(handlaggningId));
+      return kompletteringTask;
+   }
+
+   /**
     * POST /regel/rtf-manuell-komplettering/{handlaggningId}/done — closes the komplettering OUL
     * task and continues regel processing synchronously; the main OUL task is created within this
     * HTTP call before 204 is returned.
@@ -612,6 +804,31 @@ abstract class RimfrostTestSupport
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.noBody())
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   /**
+    * POST /test/identitet-data-changed — simulates an external identity update that fires
+    * an {@code IdentitetUppdateradEvent} to all prenumerationer matching the given typId/varde.
+    * The komplettering rule service handles this event and auto-resolves the komplettering when
+    * {@code isKompletteringRequired} returns false for the updated handläggning.
+    *
+    * @param idtyp  typId of the updated identity (e.g. IDTYP_TYP_ID)
+    * @param idvarde  varde of the updated identity (e.g. the personnummer)
+    * @return HTTP status code (204 on success)
+    */
+   static int sendTriggerIdentitetDataChanged(String idtyp, String idvarde)
+         throws IOException, InterruptedException
+   {
+      var triggerRequest = new TriggerRequest();
+      triggerRequest.setIdtyp(idtyp);
+      triggerRequest.setIdvarde(idvarde);
+      var request = HttpRequest.newBuilder()
+            .uri(URI.create(IDENTITET_PRENUMERATION_BASE_URL + "/test/identitet-data-changed"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(triggerRequest)))
             .build();
       return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }
@@ -833,7 +1050,7 @@ abstract class RimfrostTestSupport
    static void waitForServiceRestartingPortForward(String serviceName, int localPort, int remotePort,
          String baseUrl, int timeoutSeconds) throws IOException, InterruptedException
    {
-      System.out.println("Waiting for " + baseUrl + " (restarting port-forward as needed)");
+      System.out.println("Waiting for " + serviceName + " (" + baseUrl + ", restarting port-forward as needed)");
       new ProcessBuilder("sh", "-c", "pkill -f 'kubectl port-forward.*" + localPort + "' 2>/dev/null; true")
             .start().waitFor();
       var deadline = java.time.Instant.now().plusSeconds(timeoutSeconds);
@@ -856,7 +1073,7 @@ abstract class RimfrostTestSupport
                var response = client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
                if (response.statusCode() < 500)
                {
-                  System.out.println("Service ready: " + baseUrl);
+                  System.out.println("Service ready: " + serviceName);
                   return;
                }
             }

@@ -145,7 +145,7 @@ quarkus:
   - name: rtf-manuell-komplettering
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering
-      tag: 0.1.1
+      tag: 0.1.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -163,6 +163,8 @@ quarkus:
         value: "http://rimfrost-k8s-permissions:8080"
       - name: QUARKUS_REST_CLIENT_IDENTITY_API_URL
         value: "http://rimfrost-k8s-identity:8080"
+      - name: IDENTITET_PRENUMERATION_API_BASE_URL
+        value: "http://rimfrost-k8s-identitet-prenumeration:8080"
     waitForKafka: true
     waitForPostgres: true
   - name: bekraftabeslut
@@ -186,6 +188,16 @@ quarkus:
         value: "http://rimfrost-k8s-identity:8080"
     waitForKafka: true
     waitForPostgres: true
+  - name: identitet-prenumeration
+    image:
+      repository: ghcr.io/forsakringskassan/identitet-prenumeration
+      tag: 0.0.3
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
   - name: team
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-team
@@ -270,12 +282,12 @@ quarkus:
           scope: processVahApp
           module: ProcessVy
           devEntry: http://localhost:3041/mf-manifest.json
-          prodEntry: http://localhost:8901/mf-manifest.json
+          prodEntry: http://localhost:8904/mf-manifest.json
         vab:
           scope: processVabApp
           module: ProcessVy
           devEntry: http://localhost:3043/mf-manifest.json
-          prodEntry: http://localhost:8902/mf-manifest.json
+          prodEntry: http://localhost:8905/mf-manifest.json
         remoteExample:
           scope: remoteExample
           module: ExampleComponent
@@ -396,11 +408,11 @@ quarkus:
       # process-vah's GET /processvy/steg, reached inside the cluster.
       - name: PROCESS_VAH_URL
         value: "http://rimfrost-k8s-vah:8080"
-      # :8901 is process-vah-fe's port-forward.sh port (see apache: list below).
+      # :8904 is process-vah-fe's port-forward.sh port (see apache: list below).
       # :8894 (portal-handlaggare) is needed too: the processvy is loaded as a
       # Module Federation remote, so the browser's Origin is the shell's.
       - name: CORS_ORIGINS
-        value: "http://localhost:3000,http://localhost:3030,http://localhost:8901,http://localhost:8894"
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8904,http://localhost:8894"
       # rimfrost-framework-bff 0.0.3 pulls in quarkus-messaging-kafka (the
       # ilogg-event channel), so the BFF needs a bootstrap server even though
       # it doesn't publish ILogg events itself.
@@ -419,11 +431,11 @@ quarkus:
       # process-vab's GET /processvy/steg, reached inside the cluster.
       - name: PROCESS_VAB_URL
         value: "http://rimfrost-k8s-vab:8080"
-      # :8902 is process-vab-fe's port-forward.sh port (see apache: list below).
+      # :8905 is process-vab-fe's port-forward.sh port (see apache: list below).
       # :8894 (portal-handlaggare) is needed too: the processvy is loaded as a
       # Module Federation remote, so the browser's Origin is the shell's.
       - name: CORS_ORIGINS
-        value: "http://localhost:3000,http://localhost:3030,http://localhost:8902,http://localhost:8894"
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8905,http://localhost:8894"
     # process-vab-bff 0.0.1 is on rimfrost-framework-bff 0.0.1, which has no
     # Kafka. Add the Kafka env like process-vah-bff's when it upgrades to >= 0.0.3.
     waitForKafka: false

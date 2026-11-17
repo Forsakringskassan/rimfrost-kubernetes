@@ -24,9 +24,9 @@ To skip port-forwarding (e.g. in CI):
 ./deploy.sh --no-pf
 ```
 
-Minikube gets 12 GiB of memory, so Docker Desktop needs at least about 13 GiB. The memory is
+Minikube gets 14 GiB of memory, so Docker Desktop needs at least about 15 GiB. The memory is
 only set when the minikube profile is created: an existing profile keeps its old size, and the
-services get OOMKilled with less than 12 GiB. Check with `docker stats --no-stream | grep minikube`
+services get OOMKilled with too little memory. Check with `docker stats --no-stream | grep minikube`
 and recreate the profile if needed (this also deletes the PostgreSQL volume):
 
 ```sh

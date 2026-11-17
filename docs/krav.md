@@ -84,9 +84,9 @@ BFF.
 
 ## Förutsättningar
 
-Scenariot kräver att regelns backend returnerar informationsaccessdata (FKPOC-1103) och att
-regelns BFF publicerar eventet (RTFB-FR-04), och att båda är driftsatta i miljön. BFF:en
-publicerar via ILogg i `rimfrost-framework-bff` (FKPOC-1098) och behöver Kafka i miljön.
+Scenariot kan bara köras när regelns backend returnerar informationsaccessdata (FKPOC-1103)
+och regelns BFF publicerar eventet (FKPOC-1098), och båda är driftsatta i miljön. Till dess
+är eventdelen av scenariot avstängd.
 
 Processvyns scenario kräver att process-vah skickar med aktivitetens ID och processvy-länken
 när en regel startas (process-vah 1.2.3), att OUL sparar och returnerar fälten (OUL 1.9.1,

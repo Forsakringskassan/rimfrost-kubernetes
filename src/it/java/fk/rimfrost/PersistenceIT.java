@@ -37,10 +37,7 @@ public class PersistenceIT extends RimfrostTestSupport
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
-      assignUnassignableUppgift(TEST_HANDLAGGARE_ID, handlaggningId);
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(HTTP_NO_CONTENT, sendKompletteringPatch(handlaggningId, "19900101-9999", kompletteringData.getAvsikt()));
-      assertEquals(HTTP_NO_CONTENT, sendKompletteringDone(handlaggningId));
+      completeMandatoryKomplettering(TEST_HANDLAGGARE_ID, handlaggningId, "19900101-9999");
 
       // Assign regel task and patch beslutsutfall to JA
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);
@@ -71,10 +68,7 @@ public class PersistenceIT extends RimfrostTestSupport
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
       // Complete mandatory komplettering round (rtf-manuell 1.3.1 always triggers it)
-      assignUnassignableUppgift(TEST_HANDLAGGARE_ID, handlaggningId);
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(HTTP_NO_CONTENT, sendKompletteringPatch(handlaggningId, "19900101-9999", kompletteringData.getAvsikt()));
-      assertEquals(HTTP_NO_CONTENT, sendKompletteringDone(handlaggningId));
+      completeMandatoryKomplettering(TEST_HANDLAGGARE_ID, handlaggningId, "19900101-9999");
 
       // Assign regel task
       var uppgifterResponse = sendUppgifterHandlaggare(TEST_HANDLAGGARE_ID, handlaggningId);

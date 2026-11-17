@@ -30,8 +30,10 @@ forward_service '-uppgiftslager$' 8889 oul
 forward_service '-rtf-manuell$'   8890 rtf_manuell
 forward_service '-bekraftabeslut$' 8891 bekraftabeslut
 forward_service '-sid$' 8892 sid
+forward_service '-identitet-prenumeration$' 8901 identitet_prenumeration
 forward_service '-team$' 8893 team
 forward_service '-rtf-manuell-komplettering$' 8899 rtf_manuell_komplettering
+forward_service '-handlaggning$' 8902 handlaggning
 
 # BFF services — each listens on its own port (not 8080), matching the
 # frontends' VITE_BFF_URL defaults (see each *-fe repo's .env)
@@ -51,8 +53,8 @@ forward_service '-rtf-manuell-fe$' 8896 rtf_manuell_fe
 forward_service '-bekraftabeslut-fe$' 8897 bekraftabeslut_fe
 forward_service '-template-micro-fe$' 8898 template_micro_fe
 forward_service '-rtf-manuell-komplettering-fe$' 8900 rtf_manuell_komplettering_fe
-forward_service '-process-vah-fe$' 8901 process_vah_fe
-forward_service '-process-vab-fe$' 8902 process_vab_fe
+forward_service '-process-vah-fe$' 8904 process_vah_fe
+forward_service '-process-vab-fe$' 8905 process_vab_fe
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
@@ -60,40 +62,40 @@ nohup kubectl port-forward svc/dev-kafka-dev-kafka-combined-0 9094:9094 >> portf
 echo $! > portforward_kafka.pid
 
 wait_for_health() {
-  local port=$1 timeout=${2:-300} elapsed=0
+  local port=$1 name=$2 timeout=${3:-300} elapsed=0
   local url="http://localhost:${port}/q/health"
-  echo "Waiting for health: $url"
+  echo "Waiting for health: $name ($url)"
   while [ $elapsed -lt $timeout ]; do
     if curl -sf "$url" > /dev/null 2>&1; then
-      echo "  Ready: $url"
+      echo "  Ready: $name"
       return 0
     fi
     sleep 2
     elapsed=$((elapsed + 2))
   done
-  echo "  Timed out after ${timeout}s waiting for $url"
+  echo "  Timed out after ${timeout}s waiting for $name ($url)"
   return 1
 }
 
 wait_for_http() {
-  local port=$1 timeout=${2:-300} elapsed=0
+  local port=$1 name=$2 timeout=${3:-300} elapsed=0
   local url="http://localhost:${port}/"
-  echo "Waiting for: $url"
+  echo "Waiting for: $name ($url)"
   while [ $elapsed -lt $timeout ]; do
     if curl -sf "$url" > /dev/null 2>&1; then
-      echo "  Ready: $url"
+      echo "  Ready: $name"
       return 0
     fi
     sleep 2
     elapsed=$((elapsed + 2))
   done
-  echo "  Timed out after ${timeout}s waiting for $url"
+  echo "  Timed out after ${timeout}s waiting for $name ($url)"
   return 1
 }
 
-wait_for_health 8888 && wait_for_health 8889 && wait_for_health 8890 && wait_for_health 8891 && wait_for_health 8892 && wait_for_health 8893 && wait_for_health 8899 \
-  && wait_for_health 9001 && wait_for_health 9091 && wait_for_health 9002 && wait_for_health 9003 && wait_for_health 9004 && wait_for_health 9009 && wait_for_health 9005 && wait_for_health 9006 \
-  && wait_for_http 8894 && wait_for_http 8895 && wait_for_http 8896 && wait_for_http 8897 && wait_for_http 8898 && wait_for_http 8900 && wait_for_http 8901 && wait_for_http 8902
+wait_for_health 8888 workflow && wait_for_health 8889 uppgiftslager && wait_for_health 8890 rtf-manuell && wait_for_health 8891 bekraftabeslut && wait_for_health 8892 sid && wait_for_health 8893 team && wait_for_health 8899 rtf-manuell-komplettering && wait_for_health 8901 identitet-prenumeration && wait_for_health 8902 handlaggning \
+  && wait_for_health 9001 portal-bff && wait_for_health 9091 portal-admin-bff && wait_for_health 9002 rtf-manuell-bff && wait_for_health 9003 bekraftabeslut-bff && wait_for_health 9004 rtf-manuell-komplettering-bff && wait_for_health 9009 template-micro-fe-bff && wait_for_health 9005 process-vah-bff && wait_for_health 9006 process-vab-bff \
+  && wait_for_http 8894 portal-handlaggare && wait_for_http 8895 portal-admin-fe && wait_for_http 8896 rtf-manuell-fe && wait_for_http 8897 bekraftabeslut-fe && wait_for_http 8898 template-micro-fe && wait_for_http 8900 rtf-manuell-komplettering-fe && wait_for_http 8904 process-vah-fe && wait_for_http 8905 process-vab-fe
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then

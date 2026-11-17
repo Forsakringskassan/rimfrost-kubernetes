@@ -58,7 +58,7 @@ public class ProcessvyIT extends RimfrostTestSupport
    @BeforeAll
    static void setup() throws Exception
    {
-      waitForServiceRestartingPortForward(SERVICE_HANDLAGGNING, HANDLAGGNING_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_WORKFLOW, HANDLAGGNING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_OUL, OUL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_PROCESS_VAH, PROCESS_VAH_BASE_URL, 120);
@@ -82,10 +82,7 @@ public class ProcessvyIT extends RimfrostTestSupport
             OffsetDateTime.now());
       UUID handlaggningId = yrkandeResponse.getHandlaggning().getId();
 
-      assignUnassignableUppgift(HANDLAGGARE_ID_PROCESSVY, handlaggningId);
-      var kompletteringData = sendKompletteringGet(handlaggningId);
-      assertEquals(204, sendKompletteringPatch(handlaggningId, INDIVID_PNR, kompletteringData.getAvsikt()));
-      assertEquals(204, sendKompletteringDone(handlaggningId));
+      completeMandatoryKomplettering(HANDLAGGARE_ID_PROCESSVY, handlaggningId, INDIVID_PNR);
 
       uppgift = sendUppgifterHandlaggare(HANDLAGGARE_ID_PROCESSVY, handlaggningId).getOperativUppgift();
       assertTrue(uppgift.getUrl().contains("/rtf-manuell"),

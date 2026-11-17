@@ -26,9 +26,7 @@ fi
 
 # Start minikube if not running
 echo "🔧 Starting Minikube..."
-# 12 GiB: with the process views (FKPOC-1177) the services no longer fit in 8 GiB
-# and get OOMKilled. --memory only applies when the profile is created, see README.
-minikube start --driver=docker --cpus=4 --memory=12288
+minikube start --driver=docker --cpus=4 --memory=14336 --disk-size=40000
 
 # Enable ingress addon (skip if already enabled)
 echo "🌐 Enabling ingress addon..."

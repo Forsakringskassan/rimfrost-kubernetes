@@ -51,20 +51,47 @@ Kraven gäller det event som ett anrop enligt RK-FR-02.1 ger.
 - **RK-FR-03.6** `visadInformation` ska vara samma data som BFF:en returnerade till klienten,
   dvs. `data` i regelns GET-svar (IA-FR-01.2, FRMM-FR-09.1).
 
+### RK-FR-04 — Scenario: processvyn för en uppgift från VAH
+
+Scenariot verifierar att portalen kan visa processvyn ovanför en uppgift som VAH har skapat.
+Processen skickar med aktivitetens ID och processvy-länken när en regel startas, och OUL sparar
+dem på uppgiften. Portalen laddar processens mikrofrontend, som hämtar stegen genom processens
+BFF.
+
+- **RK-FR-04.1** En uppgift som VAH skapar ska ha `aktivitet_id` och `processvy_url` i OUL.
+  `processvy_url` ska vara `/process/vah`, som i process-vah:s konfiguration.
+- **RK-FR-04.2** process-vah ska svara på `GET /processvy/steg` för uppgiftens `aktivitet_id`,
+  med processens steg och exakt ett steg som pågår.
+- **RK-FR-04.3** process-vah-bff ska nå process-vah i klustret och svara på `GET /api/steg` för
+  samma aktivitet.
+- **RK-FR-04.4** process-vab-bff ska nå process-vab i klustret. En aktivitet som inte finns i
+  processbeskrivningen ska ge processens 4xx-svar, inte ett fel för att process-vab inte nåddes.
+
 ## Avgränsning
 
-- Scenariot omfattar när en regel öppnas. Om portalens uppgiftslista ska loggas är en öppen
+- Informationsaccess-scenariot omfattar när en regel öppnas. Om portalens uppgiftslista ska loggas är en öppen
   punkt i informationsaccess-kraven och ingår inte.
 - Scenariot omfattar `rimfrost-regel-rtf-manuell-bff`. Övriga regel-BFF:er läggs till när de
   publicerar event.
 - Mimers konsumtion av eventet och leveransen till ILOGG verifieras inte.
 - Beteendet när eventet inte kan publiceras (IA-FR-07) verifieras inte.
+- Processvyns scenario omfattar uppgifter från VAH. För VAB verifieras bara att
+  process-vab-bff når process-vab. Att processvyn faktiskt visas i portalen verifieras av
+  portalens e2e-tester.
+- Uppgifter som skapades innan processerna och OUL uppgraderades saknar `aktivitet_id` och
+  `processvy_url`. Fälten är valfria, så den lokala miljön behöver inte återställas. Sådana
+  uppgifter visas utan processvy.
 
 ## Förutsättningar
 
 Scenariot kan bara köras när regelns backend returnerar informationsaccessdata (FKPOC-1103)
 och regelns BFF publicerar eventet (FKPOC-1098), och båda är driftsatta i miljön. Till dess
 är eventdelen av scenariot avstängd.
+
+Processvyns scenario kräver att process-vah skickar med aktivitetens ID och processvy-länken
+när en regel startas (process-vah 1.2.3), att OUL sparar och returnerar fälten (OUL 1.9.1,
+FKPOC-1161), att regeln förmedlar dem till OUL (rtf-manuell 1.4.0), och att process-vah-bff
+och process-vab-bff är driftsatta i miljön (FKPOC-1170, FKPOC-1171).
 
 ## Öppna punkter
 

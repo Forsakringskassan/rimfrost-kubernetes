@@ -43,6 +43,8 @@ forward_service '-rtf-manuell-bff$' 9002 rtf_manuell_bff 9002
 forward_service '-bekraftabeslut-bff$' 9003 bekraftabeslut_bff 9003
 forward_service '-rtf-manuell-komplettering-bff$' 9004 rtf_manuell_komplettering_bff 9004
 forward_service '-template-micro-fe-bff$' 9009 template_micro_fe_bff 9009
+forward_service '-process-vah-bff$' 9005 process_vah_bff 9005
+forward_service '-process-vab-bff$' 9006 process_vab_bff 9006
 
 # FE apps (static httpd containers, no /q/health — see wait_for_http below)
 forward_service '-portal-handlaggare$' 8894 portal_handlaggare
@@ -51,6 +53,8 @@ forward_service '-rtf-manuell-fe$' 8896 rtf_manuell_fe
 forward_service '-bekraftabeslut-fe$' 8897 bekraftabeslut_fe
 forward_service '-template-micro-fe$' 8898 template_micro_fe
 forward_service '-rtf-manuell-komplettering-fe$' 8900 rtf_manuell_komplettering_fe
+forward_service '-process-vah-fe$' 8904 process_vah_fe
+forward_service '-process-vab-fe$' 8905 process_vab_fe
 
 # Port forwarding to kafka external nodeport listener
 echo "Starting port-forward: svc/dev-kafka-dev-kafka-combined-0 9094:9094"
@@ -90,8 +94,8 @@ wait_for_http() {
 }
 
 wait_for_health 8888 workflow && wait_for_health 8889 uppgiftslager && wait_for_health 8890 rtf-manuell && wait_for_health 8891 bekraftabeslut && wait_for_health 8892 sid && wait_for_health 8893 team && wait_for_health 8899 rtf-manuell-komplettering && wait_for_health 8901 identitet-prenumeration && wait_for_health 8902 handlaggning \
-  && wait_for_health 9001 portal-bff && wait_for_health 9091 portal-admin-bff && wait_for_health 9002 rtf-manuell-bff && wait_for_health 9003 bekraftabeslut-bff && wait_for_health 9004 rtf-manuell-komplettering-bff && wait_for_health 9009 template-micro-fe-bff \
-  && wait_for_http 8894 portal-handlaggare && wait_for_http 8895 portal-admin-fe && wait_for_http 8896 rtf-manuell-fe && wait_for_http 8897 bekraftabeslut-fe && wait_for_http 8898 template-micro-fe && wait_for_http 8900 rtf-manuell-komplettering-fe
+  && wait_for_health 9001 portal-bff && wait_for_health 9091 portal-admin-bff && wait_for_health 9002 rtf-manuell-bff && wait_for_health 9003 bekraftabeslut-bff && wait_for_health 9004 rtf-manuell-komplettering-bff && wait_for_health 9009 template-micro-fe-bff && wait_for_health 9005 process-vah-bff && wait_for_health 9006 process-vab-bff \
+  && wait_for_http 8894 portal-handlaggare && wait_for_http 8895 portal-admin-fe && wait_for_http 8896 rtf-manuell-fe && wait_for_http 8897 bekraftabeslut-fe && wait_for_http 8898 template-micro-fe && wait_for_http 8900 rtf-manuell-komplettering-fe && wait_for_http 8904 process-vah-fe && wait_for_http 8905 process-vab-fe
 
 # Debug port-forward for rtf-manuell (opt-in via --debug)
 if [ "${1:-}" = "--debug" ]; then

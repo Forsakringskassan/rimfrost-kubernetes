@@ -11,6 +11,6 @@ dependencies:
     repository: "https://strimzi.io/charts/"
     condition: strimzi.enabled
   - name: postgresql
-    version: "18.12.19"
+    version: "18.12.20"
     repository: "https://charts.bitnami.com/bitnami"
     condition: postgresql.enabled

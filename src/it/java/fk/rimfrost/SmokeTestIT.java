@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import se.fk.rimfrost.framework.regel.kommuniceringsutfall.jaxrsspec.controllers.generatedsource.model.Kommuniceringsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 
 public class SmokeTestIT extends RimfrostTestSupport
@@ -24,6 +25,7 @@ public class SmokeTestIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_KOMMUNICERING, KOMMUNICERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_TEAM, TEAM_BASE_URL, 120);
       resetOulDatabase();
       handlaggningDoneConsumer = createKafkaConsumer(HANDLAGGNING_DONE_TOPIC);
@@ -80,6 +82,15 @@ public class SmokeTestIT extends RimfrostTestSupport
       uppgifterHandlaggareResponse = sendUppgifterHandlaggare(handlaggareId, handlaggningId);
       regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
       assertEquals(204, sendDoneOperation(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), regelUrl));
+
+      System.out.println("Handlaggare id: " + handlaggareId);
+      System.out.println("Handlaggning id: " + handlaggningId);
+
+      // kommunicering
+      uppgifterHandlaggareResponse = assignUnassignableUppgift(handlaggareId, handlaggningId);
+      regelUrl = uppgifterHandlaggareResponse.getOperativUppgift().getUrl();
+      assertEquals(204, sendKommuniceringsutfall(handlaggningId, Kommuniceringsutfall.KUND_ACCEPTERAT));
+      assertEquals(204, sendDoneOperation(KOMMUNICERING_BASE_URL, String.valueOf(handlaggningId), regelUrl));
 
       // vah — assert kafka done message
       awaitKafkaMessage(handlaggningDoneConsumer, handlaggningId.toString());

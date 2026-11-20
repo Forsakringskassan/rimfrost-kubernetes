@@ -90,6 +90,11 @@
       <version>2.1.1</version>
     </dependency>
     <dependency>
+      <groupId>se.fk.rimfrost.framework.regel.kommuniceringsutfall</groupId>
+      <artifactId>rimfrost-framework-regel-kommuniceringsutfall-openapi-jaxrs-spec</artifactId>
+      <version>0.0.1</version>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>

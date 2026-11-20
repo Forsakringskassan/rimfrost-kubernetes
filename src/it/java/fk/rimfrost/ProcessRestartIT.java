@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import se.fk.rimfrost.framework.regel.kommuniceringsutfall.jaxrsspec.controllers.generatedsource.model.Kommuniceringsutfall;
 import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.Beslutsutfall;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.PostHandlaggningProcessResponse;
 
@@ -30,6 +31,7 @@ public class ProcessRestartIT extends RimfrostTestSupport
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL, RTF_MANUELL_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_RTF_MANUELL_KOMPLETTERING, RTF_MANUELL_KOMPLETTERING_BASE_URL, 120);
       waitForServiceRestartingPortForward(SERVICE_BEKRAFTABESLUT, BEKRAFTABESLUT_BASE_URL, 120);
+      waitForServiceRestartingPortForward(SERVICE_KOMMUNICERING, KOMMUNICERING_BASE_URL, 120);
       resetOulDatabase();
    }
 
@@ -159,5 +161,10 @@ public class ProcessRestartIT extends RimfrostTestSupport
       var bekraftaTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_PARAM, handlaggningId);
       var bekraftaUrl = bekraftaTask.getOperativUppgift().getUrl();
       assertEquals(204, sendRegelDone(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), bekraftaUrl));
+
+      var kommuniceringTask = assignUnassignableUppgift(HANDLAGGARE_ID_PARAM, handlaggningId);
+      var kommuniceringRegelUrl = kommuniceringTask.getOperativUppgift().getUrl();
+      assertEquals(204, sendKommuniceringsutfall(handlaggningId, Kommuniceringsutfall.KUND_ACCEPTERAT));
+      assertEquals(204, sendRegelDone(KOMMUNICERING_BASE_URL, String.valueOf(handlaggningId), kommuniceringRegelUrl));
    }
 }

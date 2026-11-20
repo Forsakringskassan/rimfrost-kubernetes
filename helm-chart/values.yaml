@@ -74,7 +74,7 @@ quarkus:
   - name: vah
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-husdjur
-      tag: 1.2.3
+      tag: 1.3.0
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -182,6 +182,31 @@ quarkus:
         value: "rimfrost-test"
       - name: DB_PASSWORD
         value: "rimfrost-test"
+      - name: SID_API_BASE_URL
+        value: "http://rimfrost-k8s-sid:8080"
+      - name: PERMISSIONS_API_BASE_URL
+        value: "http://rimfrost-k8s-permissions:8080"
+      - name: QUARKUS_REST_CLIENT_IDENTITY_API_URL
+        value: "http://rimfrost-k8s-identity:8080"
+    waitForKafka: true
+    waitForPostgres: true
+  - name: regel-kommunicering
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering
+      tag: 0.1.1
+    env:
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: DB_URL
+        value: "jdbc:postgresql://rimfrost-k8s-postgresql:5432/rimfrost-test"
+      - name: DB_USERNAME
+        value: "rimfrost-test"
+      - name: DB_PASSWORD
+        value: "rimfrost-test"
+      - name: SID_API_BASE_URL
+        value: "http://rimfrost-k8s-sid:8080"
       - name: PERMISSIONS_API_BASE_URL
         value: "http://rimfrost-k8s-permissions:8080"
       - name: QUARKUS_REST_CLIENT_IDENTITY_API_URL
@@ -276,6 +301,11 @@ quarkus:
           module: BekraftaBeslut
           devEntry: http://localhost:3033/mf-manifest.json
           prodEntry: http://localhost:8897/mf-manifest.json
+        kommunicering:
+          scope: kommuniceringApp
+          module: Kommunicering
+          devEntry: http://localhost:3034/mf-manifest.json
+          prodEntry: http://localhost:8906/mf-manifest.json
         # Processvyerna (stegindikatorn) ovanför uppgiften. Nyckeln är processens
         # namn i uppgiftens processvyUrl (/process/vah, /process/vab).
         vah:
@@ -373,6 +403,31 @@ quarkus:
       - name: CORS_ORIGINS
         value: "http://localhost:3000,http://localhost:3030,http://localhost:8897,http://localhost:8894"
     waitForKafka: false
+  - name: regel-kommunicering-bff
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering-bff
+      tag: 0.0.1
+    containerPort: 9007
+    servicePort: 9007
+    env:
+      - name: BACKEND_URL
+        value: "http://rimfrost-k8s-regel-kommunicering:8080/regel/kommunicering"
+      # same application-prod.properties CORS_ORIGINS override as portal-bff.
+      # :8906 is kommunicering-fe's port-forward.sh port (see apache: list below).
+      # :8894 (portal-handlaggare) is needed too: when loaded as a Module
+      # Federation remote, the browser's Origin on this fetch is the shell's
+      # origin, not kommunicering-fe's own.
+      - name: CORS_ORIGINS
+        value: "http://localhost:3000,http://localhost:3030,http://localhost:8906,http://localhost:8894"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: MP_MESSAGING_OUTGOING_ILOGG_EVENT_TOPIC
+        value: "informationsaccess"
+      - name: QUARKUS_HTTP_PORT
+        value: "9007"
+    waitForKafka: true
   - name: template-micro-fe-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe-bff
@@ -480,6 +535,13 @@ apache:
       tag: 0.0.4
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9003
+    cors: true
+  - name: regel-kommunicering-fe
+    image:
+      repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering-fe
+      tag: 0.0.1
+    runtimeConfig:
+      RUNTIME_BFF_URL: http://localhost:9007
     cors: true
   - name: template-micro-fe
     image:

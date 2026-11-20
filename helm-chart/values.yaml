@@ -243,7 +243,7 @@ quarkus:
   - name: portal-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-bff
-      tag: 2.3.0
+      tag: 2.3.1
     containerPort: 9001
     servicePort: 9001
     env:

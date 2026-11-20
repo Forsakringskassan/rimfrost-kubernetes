@@ -1,5 +1,6 @@
 helm-chart/Chart.lock
 helm-chart/charts/*
+target/
 .idea/
 *.iml
 *.log

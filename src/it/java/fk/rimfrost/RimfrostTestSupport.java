@@ -1,6 +1,8 @@
 package fk.rimfrost;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -26,6 +28,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import se.fk.rimfrost.framework.regel.kommuniceringsutfall.jaxrsspec.controllers.generatedsource.model.Kommuniceringsutfall;
+import se.fk.rimfrost.framework.regel.kommuniceringsutfall.jaxrsspec.controllers.generatedsource.model.PatchKommuniceringsutfallRequest;
+import se.fk.rimfrost.jaxrsspec.controllers.generatedsource.model.Regelutfall;
 import se.fk.rimfrost.oul.handlaggning.jaxrsspec.controllers.generatedsource.model.*;
 import se.fk.rimfrost.oul.management.jaxrsspec.controllers.generatedsource.model.UppgiftPage;
 import se.fk.rimfrost.workflow.jaxrsspec.controllers.generatedsource.model.Idtyp;
@@ -59,6 +64,9 @@ abstract class RimfrostTestSupport
    static final String BEKRAFTABESLUT_BASE_URL = System.getenv("BEKRAFTABESLUT_BASE_URL") != null
          ? System.getenv("BEKRAFTABESLUT_BASE_URL")
          : System.getProperty("regelBekraftabeslutBaseUrl", "http://localhost:8891");
+   static final String KOMMUNICERING_BASE_URL = System.getenv("KOMMUNICERING_BASE_URL") != null
+         ? System.getenv("KOMMUNICERING_BASE_URL")
+         : System.getProperty("regelKommuniceringBaseUrl", "http://localhost:8903");
    static final String TEAM_BASE_URL = System.getenv("TEAM_BASE_URL") != null
          ? System.getenv("TEAM_BASE_URL")
          : System.getProperty("teamBaseUrl", "http://localhost:8893");
@@ -115,6 +123,7 @@ abstract class RimfrostTestSupport
    static final String SERVICE_RTF_MANUELL = "rimfrost-k8s-rtf-manuell";
    static final String SERVICE_RTF_MANUELL_KOMPLETTERING = "rimfrost-k8s-rtf-manuell-komplettering";
    static final String SERVICE_BEKRAFTABESLUT = "rimfrost-k8s-bekraftabeslut";
+   static final String SERVICE_KOMMUNICERING = "rimfrost-k8s-regel-kommunicering";
    static final String SERVICE_TEAM = "rimfrost-k8s-team";
    static final String SERVICE_IDENTITET_PRENUMERATION = "rimfrost-k8s-identitet-prenumeration";
    static final String SERVICE_RTF_MANUELL_BFF = "rimfrost-k8s-rtf-manuell-bff";
@@ -377,7 +386,7 @@ abstract class RimfrostTestSupport
    /**
     * Assigns the unassignable uppgift for the given handläggning to the handläggare.
     * <p>
-    * Komplettering tasks are created with assignable=false, so OUL never hands them out via
+    * Komplettering and kommunicering tasks are created with assignable=false, so OUL never hands them out via
     * POST /uppgifter/handlaggare. Polls POST /uppgifter/individ/unassignable for the individ on the
     * handläggning until the task appears, then claims it with POST /uppgifter/{uppgiftId}/handlaggare.
     */
@@ -829,6 +838,21 @@ abstract class RimfrostTestSupport
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(triggerRequest)))
+            .build();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+   }
+
+   static int sendKommuniceringsutfall(UUID handlaggningId, Kommuniceringsutfall kommuniceringsutfall)
+         throws IOException, InterruptedException
+   {
+      var patchKommuniceringsutfallRequest = new PatchKommuniceringsutfallRequest();
+      patchKommuniceringsutfallRequest.setUtfall(kommuniceringsutfall);
+
+      var request = asAssignedHandlaggare(HttpRequest.newBuilder(), handlaggningId.toString())
+            .uri(URI.create(KOMMUNICERING_BASE_URL + "/regel/kommunicering/kommuniceringsutfall/" + handlaggningId))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(10))
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(patchKommuniceringsutfallRequest)))
             .build();
       return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }

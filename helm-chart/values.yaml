@@ -30,22 +30,22 @@ quarkus:
   - name: folkbokford
     image:
       repository: ghcr.io/forsakringskassan/folkbokford
-      tag: 1.1.2
+      tag: 1.1.3
     waitForKafka: false
   - name: arbetsgivare
     image:
       repository: ghcr.io/forsakringskassan/arbetsgivare
-      tag: 1.0.1
+      tag: 1.1.3
     waitForKafka: false
   - name: referensdata
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-referensdata
-      tag: 1.1.2
+      tag: 1.1.3
     waitForKafka: false
   - name: erbjudande-topic
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-erbjudande-topic
-      tag: 0.1.2
+      tag: 0.1.3
     env:
       - name: ERBJUDANDE_TOPIC_CONFIG_PATH
         value: "/deployments/config.yaml"
@@ -57,7 +57,7 @@ quarkus:
   - name: uppgiftslager
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-operativt-uppgiftslager
-      tag: 1.9.1
+      tag: 1.9.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -91,7 +91,7 @@ quarkus:
   - name: vab
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-vard-av-boskap
-      tag: 0.1.3
+      tag: 0.1.4
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -120,7 +120,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.4.0
+      tag: 1.4.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -145,7 +145,7 @@ quarkus:
   - name: rtf-manuell-komplettering
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering
-      tag: 0.1.2
+      tag: 0.1.3
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -170,7 +170,7 @@ quarkus:
   - name: bekraftabeslut
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut
-      tag: 1.2.0
+      tag: 1.2.1
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -193,7 +193,7 @@ quarkus:
   - name: regel-kommunicering
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering
-      tag: 0.1.1
+      tag: 0.1.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -251,7 +251,7 @@ quarkus:
   - name: workflow
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-service-workflow
-      tag: 0.2.6
+      tag: 0.2.7
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -343,7 +343,7 @@ quarkus:
   - name: rtf-manuell-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-bff
-      tag: 0.2.0
+      tag: 0.3.0
     containerPort: 9002
     servicePort: 9002
     env:
@@ -369,7 +369,7 @@ quarkus:
   - name: rtf-manuell-komplettering-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering-bff
-      tag: 0.0.3
+      tag: 0.0.4
     containerPort: 9004
     servicePort: 9004
     env:
@@ -389,7 +389,7 @@ quarkus:
   - name: bekraftabeslut-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-bff
-      tag: 0.0.3
+      tag: 0.0.5
     containerPort: 9003
     servicePort: 9003
     env:
@@ -406,7 +406,7 @@ quarkus:
   - name: regel-kommunicering-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering-bff
-      tag: 0.0.1
+      tag: 0.0.2
     containerPort: 9007
     servicePort: 9007
     env:
@@ -456,7 +456,7 @@ quarkus:
   - name: process-vah-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-process-vah-bff
-      tag: 0.1.0
+      tag: 0.1.1
     containerPort: 9005
     servicePort: 9005
     env:
@@ -479,7 +479,7 @@ quarkus:
   - name: process-vab-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-process-vab-bff
-      tag: 0.0.1
+      tag: 0.0.2
     containerPort: 9006
     servicePort: 9006
     env:
@@ -499,7 +499,7 @@ apache:
   - name: portal-handlaggare
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-handlaggare
-      tag: 0.5.0
+      tag: 0.5.1
     # Browser-facing: the FE calls the BFF from the host machine via
     # port-forward.sh's localhost tunnel, same as each app's VITE_BFF_URL default.
     runtimeConfig:
@@ -511,42 +511,42 @@ apache:
   - name: portal-admin-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-portal-admin-fe
-      tag: 0.0.2
+      tag: 0.0.3
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9091
     cors: true
   - name: rtf-manuell-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-fe
-      tag: 0.0.4
+      tag: 0.0.6
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9002
     cors: true
   - name: rtf-manuell-komplettering-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell-komplettering-fe
-      tag: 0.0.2
+      tag: 0.0.3
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9004
     cors: true
   - name: bekraftabeslut-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-fe
-      tag: 0.0.4
+      tag: 0.0.5
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9003
     cors: true
   - name: regel-kommunicering-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering-fe
-      tag: 0.0.1
+      tag: 0.0.2
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9007
     cors: true
   - name: template-micro-fe
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-template-micro-fe
-      tag: 2.0.1
+      tag: 2.1.0
     cors: true
     runtimeConfig:
       RUNTIME_BFF_URL: http://localhost:9009

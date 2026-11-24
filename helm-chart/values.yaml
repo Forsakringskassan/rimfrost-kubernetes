@@ -385,7 +385,13 @@ quarkus:
       # script was loaded from.
       - name: CORS_ORIGINS
         value: "http://localhost:3000,http://localhost:3030,http://localhost:8900,http://localhost:8894"
-    waitForKafka: false
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: MP_MESSAGING_OUTGOING_ILOGG_EVENT_TOPIC
+        value: "informationsaccess"
+    waitForKafka: true
   - name: bekraftabeslut-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-bekraftabeslut-bff
@@ -402,7 +408,13 @@ quarkus:
       # origin, not bekraftabeslut-fe's own.
       - name: CORS_ORIGINS
         value: "http://localhost:3000,http://localhost:3030,http://localhost:8897,http://localhost:8894"
-    waitForKafka: false
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+      - name: MP_MESSAGING_OUTGOING_ILOGG_EVENT_TOPIC
+        value: "informationsaccess"
+    waitForKafka: true
   - name: regel-kommunicering-bff
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-kommunicering-bff

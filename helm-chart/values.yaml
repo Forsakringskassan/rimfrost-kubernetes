@@ -120,7 +120,7 @@ quarkus:
   - name: rtf-manuell
     image:
       repository: ghcr.io/forsakringskassan/rimfrost-regel-rtf-manuell
-      tag: 1.4.1
+      tag: 1.4.2
     env:
       - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
         value: "dev-kafka-kafka-bootstrap:9092"
@@ -503,9 +503,14 @@ quarkus:
       # Module Federation remote, so the browser's Origin is the shell's.
       - name: CORS_ORIGINS
         value: "http://localhost:3000,http://localhost:3030,http://localhost:8905,http://localhost:8894"
-    # process-vab-bff 0.0.1 is on rimfrost-framework-bff 0.0.1, which has no
-    # Kafka. Add the Kafka env like process-vah-bff's when it upgrades to >= 0.0.3.
-    waitForKafka: false
+      # process-vab-bff 0.0.2 pulls in quarkus-messaging-kafka (the ilogg-event
+      # channel) via rimfrost-framework-bff, so it needs a bootstrap server even
+      # though it doesn't publish ILogg events itself.
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS
+        value: "dev-kafka-kafka-bootstrap:9092"
+      - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_ALLOW_AUTO_CREATE_TOPICS
+        value: "true"
+    waitForKafka: true
 
 apache:
   - name: portal-handlaggare

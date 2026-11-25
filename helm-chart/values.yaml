@@ -69,6 +69,14 @@ quarkus:
         value: "rimfrost-test"
       - name: DB_PASSWORD
         value: "rimfrost-test"
+    # Without a readiness probe a restarted pod gets Service traffic before Quarkus listens, and
+    # callers inside the cluster get "Connection refused" (OulSorteringsordningPersistenceIT, PersistenceIT).
+    readinessProbe:
+      httpGet:
+        path: /q/health/ready
+        port: http
+      periodSeconds: 2
+      failureThreshold: 3
     waitForKafka: true
     waitForPostgres: true
   - name: vah
@@ -140,6 +148,13 @@ quarkus:
         value: "http://rimfrost-k8s-permissions:8080"
       - name: QUARKUS_REST_CLIENT_IDENTITY_API_URL
         value: "http://rimfrost-k8s-identity:8080"
+    # Restarted by PersistenceIT; see the readinessProbe comment on uppgiftslager.
+    readinessProbe:
+      httpGet:
+        path: /q/health/ready
+        port: http
+      periodSeconds: 2
+      failureThreshold: 3
     waitForKafka: true
     waitForPostgres: true
   - name: rtf-manuell-komplettering

@@ -39,7 +39,7 @@ public class ProcessvyIT extends RimfrostTestSupport
    private static final String SERVICE_PROCESS_VAH = "rimfrost-k8s-vah";
    private static final String PROCESS_VAH_BASE_URL = System.getenv("PROCESS_VAH_BASE_URL") != null
          ? System.getenv("PROCESS_VAH_BASE_URL")
-         : System.getProperty("processVahBaseUrl", "http://localhost:8903");
+         : System.getProperty("processVahBaseUrl", "http://localhost:8907");
 
    private static final String SERVICE_PROCESS_VAH_BFF = "rimfrost-k8s-process-vah-bff";
    private static final int PROCESS_VAH_BFF_SERVICE_PORT = 9005;

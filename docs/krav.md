@@ -97,8 +97,8 @@ ger Nej.
   `processvy_url`. Fälten är valfria, så den lokala miljön behöver inte återställas. Sådana
   uppgifter visas utan processvy.
 - Kommuniceringens utfall `KundAccepterat` verifieras av smoketestet och ingår inte i
-  RK-FR-05. Vad som händer när kunden inte svarar inom svarstiden ingår inte, eftersom
-  kommuniceringsregeln saknar timer. Kommuniceringens mikrofrontend och BFF verifieras inte.
+  RK-FR-05. Timeout när kommuniceringen inte besvaras verifieras av `VahSmokeTest` i
+  rimfrost-process-vah och ingår inte. Kommuniceringens mikrofrontend och BFF verifieras inte.
 
 ## Förutsättningar
 

@@ -472,6 +472,7 @@ abstract class RimfrostTestSupport
          System.out.printf("waitForUnassignableUppgiftId succeeded after %d attempts for handlaggningId %s%n", attempt,
                handlaggningId);
       }
+      Thread.sleep(1000); // Wait 1 seconds to allow status notification to propagate. Temporary workaround until root cause of FKPOC-1507 is resolved.
       return uppgiftId;
    }
 
@@ -502,6 +503,7 @@ abstract class RimfrostTestSupport
       response.setOperativUppgift(
             mapper.readValue(assignResponse.body(), PostUppgiftHandlaggareResponse.class).getOperativUppgift());
       ASSIGNED_HANDLAGGARE.put(handlaggningId, handlaggareId);
+      Thread.sleep(1000); // Wait 1 second to allow for status notification to propagate. Temporary workaround until root cause of FKPOC-1507 is resolved.
       return response;
    }
 

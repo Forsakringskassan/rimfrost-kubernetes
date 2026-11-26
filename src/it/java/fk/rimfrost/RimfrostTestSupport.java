@@ -856,9 +856,7 @@ abstract class RimfrostTestSupport
             .timeout(Duration.ofSeconds(10))
             .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(patchKommuniceringsutfallRequest)))
             .build();
-      // The regel learns about the assignment from OUL's async status notification, so allow a
-      // few seconds for it to arrive after the task was claimed.
-      return httpSendRetries(client, request, HttpResponse.BodyHandlers.discarding(), 204, 10).statusCode();
+      return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
    }
 
    /**

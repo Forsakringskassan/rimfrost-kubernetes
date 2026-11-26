@@ -15,7 +15,8 @@ import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.mo
 /**
  * Integration tests for the komplettering flow driven by an external identity update.
  *
- * <p>The scenario: a yrkande arrives with {@code typId="personnummer"} and a known PNR, but the
+ * <p>The scenario: a yrkande arrives with the personnummer typId ({@link #IDTYP_TYP_ID}, matching
+ * {@code komplettering.personnummer-typ-id} in rtf-manuell-komplettering) and a known PNR, but the
  * handläggning is missing folkbokföring data in its {@code sakfragorStallningstaganden}. The
  * komplettering service therefore determines that komplettering is required, registers a
  * prenumeration with {@code rimfrost-service-identitet-prenumeration} for the individ's
@@ -84,16 +85,16 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       var yrkandeFrom = LocalDate.of(2025, 12, 24).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
       var yrkandeTom = LocalDate.of(2025, 12, 24).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
 
-      // Yrkande med personnummer känt — folkbokföring saknas i handläggningen.
+      // Yrkande med personnummer känt (typId enligt komplettering.personnummer-typ-id) — folkbokföring saknas.
       // isKompletteringRequired() = true → prenumeration registreras för personnumret.
-      var yrkandeResponse = sendYrkandeRequest(IDTYP_PERSONNUMMER, INDIVID_PNR, ERBJUDANDE_ID, yrkandeFrom, yrkandeTom);
+      var yrkandeResponse = sendYrkandeRequest(IDTYP_TYP_ID, INDIVID_PNR, ERBJUDANDE_ID, yrkandeFrom, yrkandeTom);
       var handlaggningId = yrkandeResponse.getHandlaggning().getId();
       assertNotNull(handlaggningId);
 
       // Vänta tills kompletteringsuppgiften har skapats i OUL (assignable=false — syns inte via
       // POST /uppgifter/handlaggare). Används som synkroniseringspunkt: när uppgiften finns har
       // handleRegelRequest körts klart och prenumerationen registrerats.
-      waitForUnassignableUppgiftId(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
+      waitForUnassignableUppgiftId(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_TYP_ID);
 
       // Verifiera att folkbokföring saknas i handläggningen innan extern uppdatering.
       var initialHandlaggning = sendGetHandlaggning(handlaggningId);
@@ -108,7 +109,7 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       // Extern källa triggar IdentitetUppdateradEvent — kompletteringstjänsten tar emot eventet,
       // läser om handläggningen (nu med folkbokföring-sakfraga), isKompletteringRequired() = false,
       // avslutar OUL-uppgiften och skickar RegelResponseMessage.
-      assertEquals(204, sendTriggerIdentitetDataChanged(IDTYP_PERSONNUMMER, INDIVID_PNR));
+      assertEquals(204, sendTriggerIdentitetDataChanged(IDTYP_TYP_ID, INDIVID_PNR));
 
       // Processen fortsätter → nästa steg är rtf-manuell OUL-uppgift (ej komplettering).
       var regelTask = sendUppgifterHandlaggare(HANDLAGGARE_ID_VARDE, handlaggningId);
@@ -129,7 +130,7 @@ public class KompletteringIdentitetUppdateringIT extends RimfrostTestSupport
       assertEquals(204, sendRegelDone(BEKRAFTABESLUT_BASE_URL, String.valueOf(handlaggningId), bekraftaUrl));
 
       // Kommunicering
-      var kommuniceringTask = assignUnassignableUppgift(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_PERSONNUMMER);
+      var kommuniceringTask = assignUnassignableUppgift(HANDLAGGARE_ID_VARDE, handlaggningId, IDTYP_TYP_ID);
       var kommuniceringRegelUrl = kommuniceringTask.getOperativUppgift().getUrl();
       assertEquals(204, sendKommuniceringsutfall(handlaggningId, Kommuniceringsutfall.KUND_ACCEPTERAT));
       assertEquals(204, sendRegelDone(KOMMUNICERING_BASE_URL, String.valueOf(handlaggningId), kommuniceringRegelUrl));

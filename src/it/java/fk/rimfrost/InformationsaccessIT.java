@@ -20,7 +20,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import se.fk.rimfrost.regel.rtf.manuell.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 
 /**
  * Integration test for the informationsaccess scenario (FKPOC-1102), see RK-FR-01–03 in docs/krav.md.
@@ -83,7 +82,7 @@ public class InformationsaccessIT extends RimfrostTestSupport
 
       var response = sendRtfManuellBffGetTask(handlaggningId, HANDLAGGARE_A_VARDE);
       assertEquals(200, response.statusCode());
-      assertEquals(handlaggningId, mapper.readValue(response.body(), GetDataResponse.class).getHandlaggningId());
+      assertEquals(handlaggningId.toString(), mapper.readTree(response.body()).path("handlaggning_id").asText());
    }
 
    /**
@@ -131,7 +130,34 @@ public class InformationsaccessIT extends RimfrostTestSupport
             () -> assertEquals(REGEL_VERSION, event.path("regelVersion").asText(), "RK-FR-03.4"),
             () -> assertFalse(tidpunkt.isBefore(fore.minus(CLOCK_MARGIN)), "RK-FR-03.5"),
             () -> assertFalse(tidpunkt.isAfter(efter.plus(CLOCK_MARGIN)), "RK-FR-03.5"),
-            () -> assertEquals(mapper.readTree(response.body()), event.path("visadInformation"), "RK-FR-03.6"));
+            () -> assertEquals(withoutNulls(mapper.readTree(response.body())),
+                  withoutNulls(event.path("visadInformation")), "RK-FR-03.6"));
+   }
+
+   /**
+    * Removes fields with a null value, at every level. The BFF leaves null fields out of its response,
+    * while the event writes them as null, and both mean the same thing.
+    */
+   private static JsonNode withoutNulls(JsonNode node)
+   {
+      if (node.isObject())
+      {
+         var copy = mapper.createObjectNode();
+         node.properties().forEach(field -> {
+            if (!field.getValue().isNull())
+            {
+               copy.set(field.getKey(), withoutNulls(field.getValue()));
+            }
+         });
+         return copy;
+      }
+      if (node.isArray())
+      {
+         var copy = mapper.createArrayNode();
+         node.forEach(element -> copy.add(withoutNulls(element)));
+         return copy;
+      }
+      return node;
    }
 
    /**

@@ -67,6 +67,21 @@ BFF.
 - **RK-FR-04.4** process-vab-bff ska nå process-vab i klustret. En aktivitet som inte finns i
   processbeskrivningen ska ge processens 4xx-svar, inte ett fel för att process-vab inte nåddes.
 
+### RK-FR-05 — Scenario: kommunicering i VAH
+
+Scenariot verifierar att VAH fortsätter rätt beroende på utfallet av kommuniceringen. Efter
+bekräfta beslut skapar VAH en kommuniceringsuppgift som inte kan tilldelas via kön, så
+handläggaren tar den direkt. rimfrost-regel-kommunicering översätter kommuniceringsutfallet
+till regelns utfall: `KundAccepterat` och `NekatBestridande` ger Ja, `AccepteratBestridande`
+ger Nej.
+
+- **RK-FR-05.1** Utfallet `NekatBestridande` ska avsluta handläggningen, så att ett
+  meddelande publiceras på `handlaggning-done`.
+- **RK-FR-05.2** Utfallet `AccepteratBestridande` ska få VAH att börja om från den maskinella
+  kontrollen. Handläggaren ska få en ny rtf-manuell-uppgift utan komplettering, eftersom
+  personnummer och folkbokföring redan finns, och sedan bekräfta beslut och kommunicering
+  igen. När den andra kommuniceringen ger `KundAccepterat` ska handläggningen avslutas.
+
 ## Avgränsning
 
 - Informationsaccess-scenariot omfattar när en regel öppnas. Om portalens uppgiftslista ska loggas är en öppen
@@ -81,6 +96,9 @@ BFF.
 - Uppgifter som skapades innan processerna och OUL uppgraderades saknar `aktivitet_id` och
   `processvy_url`. Fälten är valfria, så den lokala miljön behöver inte återställas. Sådana
   uppgifter visas utan processvy.
+- Kommuniceringens utfall `KundAccepterat` verifieras av smoketestet och ingår inte i
+  RK-FR-05. Timeout när kommuniceringen inte besvaras verifieras av `VahSmokeTest` i
+  rimfrost-process-vah och ingår inte. Kommuniceringens mikrofrontend och BFF verifieras inte.
 
 ## Förutsättningar
 
@@ -92,6 +110,9 @@ Processvyns scenario kräver att process-vah skickar med aktivitetens ID och pro
 när en regel startas (process-vah 1.2.3), att OUL sparar och returnerar fälten (OUL 1.9.1,
 FKPOC-1161), att regeln förmedlar dem till OUL (rtf-manuell 1.4.0), och att process-vah-bff
 och process-vab-bff är driftsatta i miljön (FKPOC-1170, FKPOC-1171).
+
+Kommuniceringens scenario kräver att rimfrost-regel-kommunicering (0.1.1) och VAH med
+kommunicering i processen (rimfrost-vard-av-husdjur 1.3.0) är driftsatta i miljön (FKPOC-1471).
 
 ## Öppna punkter
 
